@@ -161,6 +161,9 @@ def main():
         sys.exit(3)
 
     train_script_path = helper.get_train_script_path(task_args)
+    print("=== task_args ===", task_args)
+    print("=== train_script_path ===", train_script_path)
+
     if train_script_path is None:
         START_LOGGER.error("Can't find path of train script.")
         sys.exit(4)
