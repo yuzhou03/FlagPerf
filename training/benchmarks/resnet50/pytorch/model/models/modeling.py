@@ -17,7 +17,6 @@ def create_model(args, ngpus_per_node) -> Any:
 
     print(f"create_model model: {model}")
 
-
     if not torch.cuda.is_available() and not torch.backends.mps.is_available():
         print('using CPU, this will be slow')
     elif args.distributed:

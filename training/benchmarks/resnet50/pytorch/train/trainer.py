@@ -76,7 +76,6 @@ class Trainer:
                                  prefix="Epoch: [{}]".format(epoch))
 
         # switch to train mode
-        model.to(device)
         model.train()
 
         end = time.time()
@@ -105,6 +104,7 @@ class Trainer:
             target = target.to(device, non_blocking=True)
 
             # compute output
+            # model.to(device)
             output = model(images)
             loss = criterion(output, target)
 

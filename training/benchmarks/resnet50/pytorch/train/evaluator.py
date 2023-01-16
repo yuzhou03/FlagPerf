@@ -72,6 +72,7 @@ class Evaluator:
         model.eval()
 
         run_validate(val_loader)
+        
         if config.distributed:
             top1.all_reduce()
             top5.all_reduce()
