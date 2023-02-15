@@ -4,7 +4,6 @@
 
 import os
 import os.path as ospath
-from .dist_pytorch import global_batch_size
 
 
 def get_config_arg(config, name):
@@ -19,17 +18,25 @@ def get_config_arg(config, name):
     return None
 
 
-def check_config(config, model_pt_file):
+def check_config(config:any, model_pt_file:str)->None:
+    """
+    check config and set init_checkpoint
+    :param config config object
+    :param model_pt_file path of model pre-trained checkpoint file
+    """
     print(
         "device: {} n_device: {}, distributed training: {}, 16-bits training: {}"
         .format(config.device, config.n_device, config.local_rank != -1,
                 config.fp16))
 
     data_dir = get_config_arg(config, "data_dir")
+    
     if data_dir is None:
         raise ValueError("Invalid data_dir, should be given a path.")
+    
     if not ospath.isdir(data_dir):
         raise ValueError(f"data_dir '{data_dir}' not exists.")
+    
     config.data_dir = data_dir
 
     train_data = get_config_arg(config, "train_data")

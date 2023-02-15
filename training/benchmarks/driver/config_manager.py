@@ -52,6 +52,7 @@ def get_properties_from_config(config):
 
 def add_to_argparser(config: dict, parser: ArgumentParser):
 
+    # get data type of value
     def get_property_type(name, value):
         if value is not None:
             return type(value)
@@ -82,7 +83,7 @@ def add_to_argparser(config: dict, parser: ArgumentParser):
             continue
         add_args(parser, name, value)
 
-
+# merge dict from src to target
 def _merge_dict_to_config(src: dict, target: dict, ignore_none=True):
     for arg, value in src.items():
         if ignore_none and value is None:
