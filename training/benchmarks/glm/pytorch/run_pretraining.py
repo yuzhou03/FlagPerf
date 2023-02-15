@@ -40,8 +40,8 @@ def main():
 
     dist_pytorch.init_dist_training_env(config)
 
-    check.check_config(
-        config, "blocklm-large-blank/200000/mp_rank_00_model_states.pt")
+    check.check_config(config, "blocklm-large-blank/200000/mp_rank_00_model_states.pt")
+    # check.check_config(config, config.init_checkpoint)
 
     dist_pytorch.barrier()
     glm_driver.event(Event.INIT_START)
@@ -60,6 +60,8 @@ def main():
     torch.manual_seed(worker_seed)
     worker_init = WorkerInitializer.default(worker_seed)
 
+
+    # train & validate related
     evaluator = Evaluator(config, None)
     training_state = TrainingState()
     trainer = Trainer(driver=glm_driver,
@@ -81,9 +83,7 @@ def main():
     score = trainer.evaluator.evaluate(trainer)
     training_state.eval_accuracy = score
     init_evaluation_end = time.time()
-    init_evaluation_info = dict(eval_accuracy=score,
-                                time=init_evaluation_end -
-                                init_evaluation_start)
+    init_evaluation_info = dict(eval_accuracy=score, time=init_evaluation_end - init_evaluation_start)
     # training_event.on_init_evaluate(init_evaluation_info)
     glm_driver.event(Event.INIT_EVALUATION, init_evaluation_info)
 
@@ -129,8 +129,7 @@ if __name__ == "__main__":
 
     e2e_time = time.time() - now
     if config.do_train:
-        training_perf = (dist_pytorch.global_batch_size(config) *
-                         state.global_steps) / state.raw_train_time
+        training_perf = (dist_pytorch.global_batch_size(config) * state.global_steps) / state.raw_train_time
         finished_info = {
             "e2e_time": e2e_time,
             "training_sequences_per_second": training_perf,
