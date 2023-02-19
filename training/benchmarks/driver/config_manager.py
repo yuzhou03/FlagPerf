@@ -24,7 +24,7 @@ def import_config(config_path: str):
 
         return module
     else:
-        raise f'{config_path} does not exist.'
+        raise Exception(f'{config_path} does not exist.')
 
 
 def is_property(name: str, value):
@@ -139,7 +139,7 @@ def activate(base_config,
         params[mutable_param] = getattr(base_config, mutable_param)
 
     if path and not config_file:
-        raise "Config file's location was not specified."
+        raise Exception("Config file's location was not specified.")
 
     ext_config = os.path.join(os.path.abspath(path), config_file)
 
