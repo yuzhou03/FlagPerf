@@ -1,6 +1,8 @@
 """CPM Pretraining"""
 
 from __future__ import absolute_import
+from driver import Driver, Event, dist_pytorch, check
+import driver
 from __future__ import division
 from __future__ import print_function
 
@@ -23,8 +25,6 @@ from train import trainer_adapter
 
 CURR_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../")))
-import driver
-from driver import Driver, Event, dist_pytorch, check
 
 logger = None
 
@@ -44,7 +44,7 @@ def main():
     logger = cpm_driver.logger
     dist_pytorch.init_dist_training_env(config)
 
-    check.check_config(config, "cpm_model_states_medium.pt")
+    check.check_config(config, has_checkpoint=True)
 
     dist_pytorch.barrier()
     cpm_driver.event(Event.INIT_START)

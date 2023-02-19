@@ -40,8 +40,7 @@ def main():
 
     dist_pytorch.init_dist_training_env(config)
 
-    check.check_config(
-        config, "blocklm-large-blank/200000/mp_rank_00_model_states.pt")
+    check.check_config(config, has_checkpoint=True)
 
     dist_pytorch.barrier()
     glm_driver.event(Event.INIT_START)
