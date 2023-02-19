@@ -12,7 +12,7 @@ def set_extern_module_ns(module):
     try:
         mod = sys.modules.get('extern') or module
         if mod is not module:
-            raise 'Naming conflict occurs. `extern` is found to be a different module.'
+            raise Exception('Naming conflict occurs. `extern` is found to be a different module.')
         # rebind
         sys.modules['extern'] = mod
         if module.__name__ != 'extern':
@@ -30,7 +30,7 @@ def install_extern_modules(path: str, mod_dict: dict = None):
         mod_dict: add modules to this dictionary.
     """
     if not os.path.isdir(path):
-        raise 'Directory {path} does not exist!'
+        raise Exception(f'Directory {path} does not exist!')
 
     fullpath = os.path.abspath(path)
     basename = os.path.basename(fullpath)
