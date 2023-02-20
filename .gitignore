@@ -7,10 +7,6 @@ __pycache__/
 
 
 training/result/
-<<<<<<< HEAD
-*.tar
-=======
 
 *.tar
 training/run_benchmarks/rerun.sh
->>>>>>> resnet50-refine-concise
