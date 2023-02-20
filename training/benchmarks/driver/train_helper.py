@@ -1,8 +1,3 @@
-'''
-Author: zhouyu
-LastEditors: zhouyu
-Description: for pytorch framework, 定义run_pretrain中的通用逻辑 
-'''
 # Copyright © 2022 BAAI. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License")
 
