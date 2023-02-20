@@ -8,7 +8,6 @@ import time
 import numpy as np
 import torch
 from . import dist_pytorch as distributed
-from train.training_state import TrainingState
 from driver import dist_pytorch, perf_logger, Driver
 
 import driver
@@ -19,7 +18,7 @@ class TrainHelper:
     定义run_pretrain中的通用逻辑
     """
 
-    def __init__(self, config: any) -> None:
+    def __init__(self, config: object) -> None:
         self.config = config
 
     
@@ -73,7 +72,7 @@ class TrainHelper:
         model_driver.setup_modules(driver, globals(), locals())
         return model_driver
 
-    def get_finished_info(self, start_time: int, state: TrainingState) -> dict:
+    def get_finished_info(self, start_time: int, state: object) -> dict:
         """
         :param start_time start timestamp for training
         :param state training state
