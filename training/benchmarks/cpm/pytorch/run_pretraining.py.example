@@ -55,9 +55,7 @@ def main() -> Tuple[Any, Any, Any]:
     2. 自定义seed的生成方式：dist_pytorch.setup_seeds得到work_seeds数组，取其中某些元素。参考GLM-Pytorch的run_pretraining.py的seed生成方式。
     """
 
-    # TODO vendor
-    vendor = ""
-    helper.set_seed(seed, vendor)
+    helper.set_seed(seed, config.vendor)
 
     # TODO  构建dataset, dataloader 【train && validate】
     train_dataset = build_train_dataset()
