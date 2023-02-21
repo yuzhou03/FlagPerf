@@ -1,5 +1,9 @@
 """Pytorch Pretraining Example"""
 
+"""
+说明：文档中所有TODO的地方，都需要自定义实现。尽量保证接口一致。
+"""
+
 # 标准库
 import os
 import sys
@@ -19,13 +23,18 @@ from driver import Event, dist_pytorch, check, train_helper
 from train.evaluator import Evaluator
 from train.trainer import Trainer
 from train.training_state import TrainingState
-from dataloaders.dataloader import build_train_dataset,\
+
+"""
+这里需要导入dataloader的相关方法。 这里尽量保证函数的接口一致，实现可以不同。
+"""
+
+from dataloaders.dataloader import build_train_dataset, \
     build_eval_dataset, build_train_dataloader, build_eval_dataloaders
 import config
 logger = None
 
 
-def main() -> Tuple(Any, Any, Any):
+def main() -> Tuple[Any, Any, Any]:
     global logger
     helper = train_helper.TrainHelper(config)
     model_driver = helper.init_driver(config.name)  # _base.py增加模型名称name
@@ -40,7 +49,11 @@ def main() -> Tuple(Any, Any, Any):
     init_start_time = logger.previous_log_time
 
     # TODO 得到seed
-    seed: int = 0
+    """
+    这里获取seed的可行方式：
+    1. 配置文件中的seed
+    2. 自定义seed的生成方式：dist_pytorch.setup_seeds得到work_seeds数组，取其中某些元素。参考GLM-Pytorch的run_pretraining.py的seed生成方式。
+    """
 
     # TODO vendor
     vendor = ""
@@ -51,7 +64,6 @@ def main() -> Tuple(Any, Any, Any):
     eval_dataset = build_eval_dataset()
     train_dataloader = build_train_dataloader()
     eval_dataloader = build_eval_dataloaders()
-    print(train_dataset, eval_dataset, train_dataloader)
 
     # 根据 eval_dataloader 构建evaluator
     evaluator = Evaluator(config, eval_dataloader)
@@ -66,7 +78,7 @@ def main() -> Tuple(Any, Any, Any):
                       training_state=training_state,
                       device=config.device,
                       config=config)
-    training_state.trainer = trainer  # 需要添加set方法，不应访问private变量
+    training_state._trainer = trainer
 
     # 设置分布式环境, trainer init()
     dist_pytorch.barrier()
@@ -75,10 +87,13 @@ def main() -> Tuple(Any, Any, Any):
 
     # evaluation统计
     init_evaluation_start = time.time()
-    # TODO evaluate()方法返回值不一致，自定义
+    
+    # TODO evaluate()方法返回值不一致，自定义evaluate()返回值的赋值逻辑
+
     init_evaluation_end = time.time()
 
     init_evaluation_info = dict(
+        
         # TODO 更新eval相关信息到init_evaluation_info中
         # eval_loss=training_state.eval_avg_loss,
         # eval_embedding_average=training_state.eval_embedding_average,
@@ -98,19 +113,18 @@ def main() -> Tuple(Any, Any, Any):
     model_driver.event(Event.TRAIN_START)
     raw_train_start_time = logger.previous_log_time
 
-    # TODO 训练过程
-    # epoch = -1
-    # while training_state.global_steps < config.max_steps and \
-    # not training_state.end_training:
-    #     epoch += 1
-    #     training_state.epoch = epoch
-    #     trainer.train_one_epoch(train_dataloader)
+    # 训练过程
+    epoch = -1
+    while training_state.global_steps < config.max_steps and \
+            not training_state.end_training:
+        epoch += 1
+        training_state.epoch = epoch
+        trainer.train_one_epoch(train_dataloader)
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
     raw_train_end_time = logger.previous_log_time
-    training_state.raw_train_time = (
-        raw_train_end_time - raw_train_start_time) / 1e+3
+    training_state.raw_train_time = (raw_train_end_time - raw_train_start_time) / 1e+3
 
     return config, training_state, helper
 
