@@ -25,9 +25,8 @@ from train.trainer import Trainer
 from train.training_state import TrainingState
 
 """
-这里需要导入dataloader的相关方法。 这里尽量保证函数的接口一致，实现可以不同。
+TODO 这里需要导入dataset, dataloader的相关方法。 这里尽量保证函数的接口一致，实现可以不同。
 """
-
 from dataloaders.dataloader import build_train_dataset, \
     build_eval_dataset, build_train_dataloader, build_eval_dataloaders
 import config
@@ -55,6 +54,7 @@ def main() -> Tuple[Any, Any, Any]:
     2. 自定义seed的生成方式：dist_pytorch.setup_seeds得到work_seeds数组，取其中某些元素。参考GLM-Pytorch的run_pretraining.py的seed生成方式。
     """
 
+    # TODO _base.py, mutalbe_params.py 中都需要包含vendor参数
     helper.set_seed(seed, config.vendor)
 
     # TODO  构建dataset, dataloader 【train && validate】
