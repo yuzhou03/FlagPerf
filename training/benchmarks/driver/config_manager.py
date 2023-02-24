@@ -24,7 +24,7 @@ def import_config(config_path: str):
 
         return module
     else:
-        raise f'{config_path} does not exist.'
+        raise Exception(f'{config_path} does not exist.')
 
 
 def is_property(name: str, value):
@@ -52,6 +52,7 @@ def get_properties_from_config(config):
 
 def add_to_argparser(config: dict, parser: ArgumentParser):
 
+    # get data type of value
     def get_property_type(name, value):
         if value is not None:
             return type(value)
@@ -82,7 +83,7 @@ def add_to_argparser(config: dict, parser: ArgumentParser):
             continue
         add_args(parser, name, value)
 
-
+# merge dict from src to target
 def _merge_dict_to_config(src: dict, target: dict, ignore_none=True):
     for arg, value in src.items():
         if ignore_none and value is None:
@@ -138,7 +139,7 @@ def activate(base_config,
         params[mutable_param] = getattr(base_config, mutable_param)
 
     if path and not config_file:
-        raise "Config file's location was not specified."
+        raise Exception("Config file's location was not specified.")
 
     ext_config = os.path.join(os.path.abspath(path), config_file)
 
