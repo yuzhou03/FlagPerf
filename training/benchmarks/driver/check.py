@@ -17,12 +17,7 @@ def get_config_arg(config: object, name: str) -> object:
     return None
 
 
-def check_config(config: object, has_checkpoint: bool = True) -> None:
-    """
-    check config and set init_checkpoint
-    :param config config object
-    :param has_checkpoint whether has checkpoint or not
-    """
+def check_config(config):
     print(
         "device: {} n_device: {}, distributed training: {}, 16-bits training: {}"
         .format(config.device, config.n_device, config.local_rank != -1,
@@ -47,14 +42,12 @@ def check_config(config: object, has_checkpoint: bool = True) -> None:
         config.eval_data = ospath.join(data_dir, eval_data)
 
     init_checkpoint = get_config_arg(config, "init_checkpoint")
-
-    if has_checkpoint and init_checkpoint is None:
-        raise ValueError(
-            f"has_checkpoint: config's init_checkpoint is required")
-
-    config.init_checkpoint = init_checkpoint
+    if init_checkpoint is not None:
+        if not os.path.exists(init_checkpoint):
+            config.init_checkpoint = ospath.join(data_dir, config.init_checkpoint)
 
     if config.gradient_accumulation_steps < 1:
         raise ValueError(
             "Invalid gradient_accumulation_steps parameter: {}, should be >= 1"
             .format(config.gradient_accumulation_steps))
+    return config
