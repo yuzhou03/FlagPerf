@@ -1,11 +1,9 @@
 """ResNet50 Pretraining"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 
 from dataloaders import WorkerInitializer, build_train_dataloader
-from driver import Driver, Event, dist_pytorch, train_helper
+from driver import Driver, Event, dist_pytorch
+
+from driver.helper import InitHelper
 import driver
 from train import trainer_adapter
 from train.device import Device
@@ -34,19 +32,13 @@ sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../")))
 
 
 logger = None
-best_acc1 = 0
 
-
-def save_checkpoint(state: object, is_best: bool, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    shutil.copyfile(filename, 'model_best.pth.tar')
 
 
 def main() -> Tuple[Any, Any, Any]:
     """ main training workflow """
     import config
     global logger
-    global best_acc1
 
     print(f"learning_rate: {config.learning_rate}")
     print(f"num_workers: {config.num_workers}")
@@ -55,15 +47,19 @@ def main() -> Tuple[Any, Any, Any]:
     print(f"weight_decay_rate: {config.weight_decay_rate}")
     print(f"print_freq: {config.print_freq}")
 
-    helper = train_helper.TrainHelper(config)
-
-    resnet_driver = helper.init_driver(config.arch)
-    config.local_rank = helper.get_local_rank()
-    print(f"config.local_rank: {config.local_rank}")
-
-    logger = resnet_driver.logger
-    print(f"main max_steps: {config.max_steps}")
+     # init
+    init_helper = InitHelper(config)
+    model_driver = init_helper.init_driver()  # _base.py增加模型名称name
+    config = model_driver.config
     dist_pytorch.init_dist_training_env(config)
+    dist_pytorch.barrier(config.vendor)
+    model_driver.event(Event.INIT_START)
+
+    # logger
+    logger = model_driver.logger
+    init_start_time = logger.previous_log_time
+
+    print(f"main max_steps: {config.max_steps}")
 
     if torch.cuda.is_available():
         ngpus_per_node = torch.cuda.device_count()
@@ -74,11 +70,11 @@ def main() -> Tuple[Any, Any, Any]:
     config.distributed = world_size > 1 or config.multiprocessing_distributed
     print(f"world_size={world_size}, config.distributed:{config.distributed}")
 
-    dist_pytorch.barrier()
-    resnet_driver.event(Event.INIT_START)
+    dist_pytorch.barrier(config.vendor)
+    model_driver.event(Event.INIT_START)
     init_start_time = logger.previous_log_time
 
-    rand_seed = helper.init_rand_seed()
+    rand_seed = config.seed
     worker_init = WorkerInitializer.default(rand_seed)
 
     # train && val dataset
@@ -137,7 +133,7 @@ def main() -> Tuple[Any, Any, Any]:
     evaluator = Evaluator(config, eval_dataloader, criterion)
 
     training_state = TrainingState()
-    trainer = Trainer(driver=resnet_driver,
+    trainer = Trainer(driver=model_driver,
                       adapter=trainer_adapter,
                       evaluator=evaluator,
                       training_state=training_state,
@@ -146,9 +142,9 @@ def main() -> Tuple[Any, Any, Any]:
 
     training_state._trainer = trainer
 
-    dist_pytorch.barrier()
+    dist_pytorch.barrier(config.vendor)
     trainer.init()
-    dist_pytorch.barrier()
+    dist_pytorch.barrier(config.vendor)
 
     if config.evaluate:
         init_evaluation_start = time.time()
@@ -160,21 +156,21 @@ def main() -> Tuple[Any, Any, Any]:
             time=init_evaluation_end - init_evaluation_start,
         )
         # training_event.on_init_evaluate(init_evaluation_info)
-        resnet_driver.event(Event.INIT_EVALUATION, init_evaluation_info)
+        model_driver.event(Event.INIT_EVALUATION, init_evaluation_info)
         return
 
     if not config.do_train:
         return config, training_state
 
     # training_event.on_init_end()
-    resnet_driver.event(Event.INIT_END)
+    model_driver.event(Event.INIT_END)
     init_end_time = logger.previous_log_time
     training_state.init_time = (init_end_time - init_start_time) / 1e+3
 
-    dist_pytorch.barrier()
+    dist_pytorch.barrier(config.vendor)
     epoch = -1
     # training_event.on_train_begin()
-    resnet_driver.event(Event.TRAIN_START)
+    model_driver.event(Event.TRAIN_START)
     raw_train_start_time = logger.previous_log_time
 
     while training_state.global_steps < config.max_steps and not training_state.end_training:
@@ -184,7 +180,7 @@ def main() -> Tuple[Any, Any, Any]:
         trainer.lr_scheduler.step()
 
     # training_event.on_train_end()
-    resnet_driver.event(Event.TRAIN_END)
+    model_driver.event(Event.TRAIN_END)
     raw_train_end_time = logger.previous_log_time
     training_state.raw_train_time = (
         raw_train_end_time - raw_train_start_time) / 1e+3
