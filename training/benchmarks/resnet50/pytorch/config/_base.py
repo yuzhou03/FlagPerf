@@ -52,7 +52,6 @@ weight_decay_rate: float = 1e-4
 # momentum for SGD optimizer
 momentum: float = 0.9
 
-
 beta_1: float = 0.9
 beta_2: float = 0.99
 eps: float = 1e-08
@@ -97,7 +96,7 @@ no_save_rng: bool = False
 
 # data args
 # Training data dir
-data_dir: str = "/raid/dataset/ImageNet/imagenet"
+data_dir: str = "/mnt/data/resnet50/train/"
 
 # Number of workers to use for dataloading
 num_workers: int = 10
@@ -179,3 +178,6 @@ gpu: int = None
 evaluate: bool = False
 multiprocessing_distributed: bool = False
 print_freq: int = 10
+
+vendor: str = None
+name: str = "resnet50"
