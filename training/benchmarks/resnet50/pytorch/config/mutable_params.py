@@ -6,7 +6,7 @@ mutable_params = [
     "attention_dropout", "hidden_dropout", "loss_scale", "dynamic_loss_scale",
     "hysteresis", "loss_scale_window", "min_scale",
     "use_gradient_as_bucket_view", "num_workers",
-    "distributed", "init_checkpoint"
+    "distributed", "init_checkpoint", "vendor"
 ]
 
 mutable_params += ["local_rank", "do_train", "data_dir", "log_freq"]
