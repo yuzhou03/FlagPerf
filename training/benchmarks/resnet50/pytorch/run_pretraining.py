@@ -34,10 +34,10 @@ sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../")))
 logger = None
 
 
-
 def main() -> Tuple[Any, Any, Any]:
-    """ main training workflow """
+    """main training workflow"""
     import config
+
     global logger
 
     print(f"learning_rate: {config.learning_rate}")
@@ -47,10 +47,13 @@ def main() -> Tuple[Any, Any, Any]:
     print(f"weight_decay_rate: {config.weight_decay_rate}")
     print(f"print_freq: {config.print_freq}")
 
-     # init
+    # init
     init_helper = InitHelper(config)
     model_driver = init_helper.init_driver()  # _base.py增加模型名称name
     config = model_driver.config
+
+    print(f"config.vendor: {config.vendor}")
+
     dist_pytorch.init_dist_training_env(config)
     dist_pytorch.barrier(config.vendor)
     model_driver.event(Event.INIT_START)
@@ -87,27 +90,35 @@ def main() -> Tuple[Any, Any, Any]:
 
     train_dataset = datasets.ImageFolder(
         traindir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ]))
+        transforms.Compose(
+            [
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        ),
+    )
 
     val_dataset = datasets.ImageFolder(
         valdir,
-        transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ]))
+        transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                normalize,
+            ]
+        ),
+    )
 
     if config.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(
-            train_dataset)
+            train_dataset
+        )
         val_sampler = torch.utils.data.distributed.DistributedSampler(
-            val_dataset, shuffle=False, drop_last=True)
+            val_dataset, shuffle=False, drop_last=True
+        )
     else:
         train_sampler = None
         val_sampler = None
@@ -115,12 +126,18 @@ def main() -> Tuple[Any, Any, Any]:
     print(f"train_dataloader num_workers: {config.num_workers}")
     print(f"train_dataloader train_batch_size: {config.train_batch_size}")
 
-    eval_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=config.eval_batch_size,
-                                                  shuffle=False, num_workers=config.num_workers,
-                                                  pin_memory=True, sampler=val_sampler)
+    eval_dataloader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=config.eval_batch_size,
+        shuffle=False,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        sampler=val_sampler,
+    )
 
     train_dataloader = build_train_dataloader(
-        config, train_dataset, worker_init)
+        config, train_dataset, worker_init
+    )
 
     print(f"train_dataset length:{len(train_dataloader.dataset)}")
     print(f"train length:{len(train_dataloader)}")
@@ -133,12 +150,14 @@ def main() -> Tuple[Any, Any, Any]:
     evaluator = Evaluator(config, eval_dataloader, criterion)
 
     training_state = TrainingState()
-    trainer = Trainer(driver=model_driver,
-                      adapter=trainer_adapter,
-                      evaluator=evaluator,
-                      training_state=training_state,
-                      device=device,
-                      config=config)
+    trainer = Trainer(
+        driver=model_driver,
+        adapter=trainer_adapter,
+        evaluator=evaluator,
+        training_state=training_state,
+        device=device,
+        config=config,
+    )
 
     training_state._trainer = trainer
 
@@ -165,7 +184,7 @@ def main() -> Tuple[Any, Any, Any]:
     # training_event.on_init_end()
     model_driver.event(Event.INIT_END)
     init_end_time = logger.previous_log_time
-    training_state.init_time = (init_end_time - init_start_time) / 1e+3
+    training_state.init_time = (init_end_time - init_start_time) / 1e3
 
     dist_pytorch.barrier(config.vendor)
     epoch = -1
@@ -173,7 +192,10 @@ def main() -> Tuple[Any, Any, Any]:
     model_driver.event(Event.TRAIN_START)
     raw_train_start_time = logger.previous_log_time
 
-    while training_state.global_steps < config.max_steps and not training_state.end_training:
+    while (
+        training_state.global_steps < config.max_steps
+        and not training_state.end_training
+    ):
         epoch += 1
         training_state.epoch = epoch
         trainer.train_one_epoch(train_dataloader, criterion, epoch)
@@ -183,7 +205,8 @@ def main() -> Tuple[Any, Any, Any]:
     model_driver.event(Event.TRAIN_END)
     raw_train_end_time = logger.previous_log_time
     training_state.raw_train_time = (
-        raw_train_end_time - raw_train_start_time) / 1e+3
+        raw_train_end_time - raw_train_start_time
+    ) / 1e3
     return config, training_state, helper
 
 
