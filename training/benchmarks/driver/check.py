@@ -19,9 +19,10 @@ def get_config_arg(config: object, name: str) -> object:
 
 def check_config(config):
     print(
-        "device: {} n_device: {}, distributed training: {}, 16-bits training: {}"
-        .format(config.device, config.n_device, config.local_rank != -1,
-                config.fp16))
+        "device: {} n_device: {}, distributed training: {}, 16-bits training: {}".format(
+            config.device, config.n_device, config.local_rank != -1, config.fp16
+        )
+    )
 
     data_dir = get_config_arg(config, "data_dir")
 
@@ -43,11 +44,12 @@ def check_config(config):
 
     init_checkpoint = get_config_arg(config, "init_checkpoint")
     if init_checkpoint is not None:
-        if not os.path.exists(init_checkpoint):
-            config.init_checkpoint = ospath.join(data_dir, config.init_checkpoint)
+        config.init_checkpoint = ospath.join(data_dir, config.init_checkpoint)
 
     if config.gradient_accumulation_steps < 1:
         raise ValueError(
-            "Invalid gradient_accumulation_steps parameter: {}, should be >= 1"
-            .format(config.gradient_accumulation_steps))
+            "Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
+                config.gradient_accumulation_steps
+            )
+        )
     return config
