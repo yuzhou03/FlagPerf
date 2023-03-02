@@ -1,12 +1,10 @@
-from typing import ClassVar
-# from train.event.base import BaseTrainingEventInterface
-
 # random seed
 seed: int = 1234
 
 # model args
 # model name
 arch: str = "resnet50"
+# name: str = "resnet50"
 
 # num decoder layers
 num_layers: int = 24
@@ -104,7 +102,7 @@ num_workers: int = 10
 # Total batch size for training.
 train_batch_size: int = 128
 
-# Total batch size for training.
+# Total batch size for validating.
 eval_batch_size: int = 128
 
 # Maximum sequence length to process
@@ -165,12 +163,8 @@ ddp_type: str = "native"
 device: str = None
 n_device: int = 1
 
-# A object to provide some core components in training
-# training_event: ClassVar[BaseTrainingEventInterface] = None
 
-# training_event_instance: BaseTrainingEventInterface = None
-
-# added by zhouyu.
+# add for resnet50
 distributed: bool = False
 pretrained: bool = False
 
@@ -181,3 +175,5 @@ print_freq: int = 10
 
 vendor: str = None
 name: str = "resnet50"
+
+debug_mode: bool = True

@@ -5,8 +5,10 @@ import torch
 
 @dataclass
 class TrainingState:
+    """record training state"""
+
     _trainer = None
-    _status = 'aborted'  # later set to 'success' if termination criteria met
+    _status = "aborted"  # later set to 'success' if termination criteria met
 
     global_steps = 0
     skipped_steps = 0
@@ -34,10 +36,13 @@ class TrainingState:
 
     def _is_property(self, value):
         status = [
-            not callable(value), not inspect.isclass(value),
-            not inspect.ismodule(value), not inspect.ismethod(value),
-            not inspect.isfunction(value), not inspect.isbuiltin(value),
-            "classmethod object" not in str(value)
+            not callable(value),
+            not inspect.isclass(value),
+            not inspect.ismodule(value),
+            not inspect.ismethod(value),
+            not inspect.isfunction(value),
+            not inspect.isbuiltin(value),
+            "classmethod object" not in str(value),
         ]
         return all(status)
 
@@ -53,8 +58,12 @@ class TrainingState:
             lr = lr[0]
         state_dict["learning_rate"] = lr
         exclude = [
-            "eval_loss", "eval_mlm_accuracy", "skipped_steps", "converged",
-            "init_time", "raw_train_time"
+            "eval_loss",
+            "eval_mlm_accuracy",
+            "skipped_steps",
+            "converged",
+            "init_time",
+            "raw_train_time",
         ]
         for exkey in exclude:
             if exkey in state_dict:
@@ -67,3 +76,7 @@ class TrainingState:
                 state_dict[k] = state_dict[k].item()
 
         return state_dict
+
+    def set_trainer(self, trainer):
+        """set trainer"""
+        self._trainer = trainer

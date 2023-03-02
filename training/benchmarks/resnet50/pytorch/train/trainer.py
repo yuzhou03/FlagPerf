@@ -3,7 +3,6 @@ import time
 import sys
 import os
 from torch.types import Device
-import torch.distributed as dist
 import torch
 import shutil
 from model import create_model
@@ -82,7 +81,7 @@ class Trainer:
         top5 = AverageMeter('Acc@5', ':6.2f')
         progress = ProgressMeter(len(train_loader),
                                  [batch_time, data_time, losses, top1, top5],
-                                 prefix="Epoch: [{}]".format(epoch))
+                                 prefix=f"Epoch: [{epoch}]")
 
         # switch to train mode
         self.model.train()

@@ -5,10 +5,10 @@ import torchvision.models as models
 def create_model(args, ngpus_per_node)->torch.nn.Module:
 
     if args.pretrained:
-        print("=> using pre-trained model '{}'".format(args.arch))
+        print(f"=> using pre-trained model {args.arch}")
         model = models.__dict__[args.arch](pretrained=True)
     else:
-        print("=> creating model '{}'".format(args.arch))
+        print(f"=> creating model {args.arch}")
         model = models.__dict__[args.arch]()
 
     if not torch.cuda.is_available() and not torch.backends.mps.is_available():
