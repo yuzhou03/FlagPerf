@@ -11,7 +11,7 @@ on:
     branches: [ "main", "master", "code_scan" ]
   pull_request:
     branches: [ "main", "master" , "code_scan" ]
-  workflow_dispatch: # Put here!!   
+  workflow_dispatch: {} # Put here!!   
 jobs:
   run-lint:
     runs-on: ubuntu-latest
