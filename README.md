@@ -1,4 +1,5 @@
 ![FlagAI](logo.png)
+[![Lint Code Base](https://github.com/yuzhou03/FlagPerf/actions/workflows/super-linter.yml/badge.svg?branch=main)](https://github.com/yuzhou03/FlagPerf/actions/workflows/super-linter.yml)
 ----------
 ### FlagPerf
 
@@ -258,4 +259,5 @@ flagperf@baai.ac.cn
 本项目基于Apache 2.0 license。
 本项目部分代码基于MLCommons https://github.com/mlcommons/training_results_v1.0/tree/master/NVIDIA 实现。
 关于各模型测试Case的情况，请参考各模型测试Case目录。
+
 
