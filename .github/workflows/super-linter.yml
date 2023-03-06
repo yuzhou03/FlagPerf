@@ -8,9 +8,9 @@ name: Lint Code Base
 
 on:
   push:
-    branches: [ "main", "master", "code_scan" ]
+    branches: [ "main", "master", "code_scan", "resnet50-refine-wwl" ]
   pull_request:
-    branches: [ "main", "master" , "code_scan" ]
+    branches: [ "main", "master" , "code_scan", "resnet50-refine-wwl" ]
   workflow_dispatch: {} # Put here!!   
 jobs:
   run-lint:
