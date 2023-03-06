@@ -28,5 +28,6 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_PYTHON: true
           VALIDATE_PYTHON_FLAKE8: true
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
           DEFAULT_BRANCH: "main"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
