@@ -46,7 +46,7 @@ max_samples_termination: float = 1388270 * 4 * 30
 num_workers: int = 4
 
 # local_rank for distributed training on gpus
-local_rank: int = 0
+local_rank: int = -1
 # Whether to read local rank from ENVVAR
 use_env: bool = True
 
@@ -55,6 +55,8 @@ num_epochs_to_generate_seeds_for: int = 2
 
 # frequency of logging loss. If not positive, no logging is provided for training loss
 log_freq: int = 10
+
+print_freq: int = 50
 
 # Whether to resume training from checkpoint.
 # If set, precedes init_checkpoint/init_tf_checkpoint
@@ -77,3 +79,16 @@ output_dir: str = "output"
 sync_bn: bool = False
 
 gpu: int = None
+
+distributed: bool = False
+
+load_pretained: bool = True
+
+num_classes: int = 90
+pretrained_path: str = "./checkpoint/resnet50.pth"
+coco_weights_pretrained_path: str = "./checkpoint/maskrcnn_resnet50_fpn_coco.pth"
+
+lr_steps: list = [16, 22]
+
+# decrease lr by a factor of lr-gamma
+lr_gamma: float = 0.1
