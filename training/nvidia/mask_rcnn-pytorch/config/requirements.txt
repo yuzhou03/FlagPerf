@@ -1,0 +1,8 @@
+torch>=1.8.0
+torchvision
+pycocotools
+lxml
+matplotlib
+numpy
+tqdm
+Pillow
