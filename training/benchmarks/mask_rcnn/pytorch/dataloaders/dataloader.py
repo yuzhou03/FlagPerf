@@ -15,9 +15,10 @@ from utils.train import create_aspect_ratio_groups, GroupedBatchSampler
 
 data_transform = {
     "train":
-    transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.RandomHorizontalFlip(0.5)]),
+    transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(0.5),
+    ]),
     "val":
     transforms.Compose([transforms.ToTensor()])
 }
@@ -52,11 +53,10 @@ def build_train_dataloader(
         group_ids = create_aspect_ratio_groups(
             train_dataset, k=config.aspect_ratio_group_factor)
         train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids,
-                                                  config.batch_size)
+                                                  config.train_batch_size)
     else:
-        train_batch_sampler = torch.utils.data.BatchSampler(train_sampler,
-                                                            config.batch_size,
-                                                            drop_last=True)
+        train_batch_sampler = torch.utils.data.BatchSampler(
+            train_sampler, config.train_batch_size, drop_last=True)
 
     data_loader = torch.utils.data.DataLoader(
         train_dataset,

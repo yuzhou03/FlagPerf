@@ -63,6 +63,9 @@ def main() -> Tuple[Any, Any]:
     dist_pytorch.barrier(config.vendor)
     model_driver.event(Event.INIT_START)
 
+    world_size = dist_pytorch.get_world_size()
+    config.distributed = world_size > 1 or config.multiprocessing_distributed
+
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms

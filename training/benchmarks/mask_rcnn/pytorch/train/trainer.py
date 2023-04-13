@@ -6,7 +6,7 @@ import sys
 from model.modeling import create_model
 from schedulers import create_scheduler
 
-import utils.train.distributed_utils as utils
+import utils.train.train_eval_utils as utils
 from train.evaluator import Evaluator
 from train.training_state import TrainingState
 
@@ -45,16 +45,28 @@ class Trainer:
         self.global_batch_size = None
 
     def init(self):
-        self.model = create_model(config)
-        # self.model = self._init_model(self.model, self.config, self.device)
+        config = self.config
+
+        pretrain_path = os.path.join(config.data_dir, config.pretrained_path)
+        coco_weights_pretrained_path = os.path.join(
+            config.data_dir, config.coco_weights_pretrained_path)
+
+        dist_pytorch.main_proc_print(
+            f"pretrain_path:{pretrain_path}, coco_weights_pretrained_path:{coco_weights_pretrained_path}"
+        )
+        self.model = create_model(
+            num_classes=config.num_classes,
+            load_pretrain_weights=True,
+            pretrain_path=pretrain_path,
+            coco_weights_path=coco_weights_pretrained_path)
         self.model = self.adapter.convert_model(self.model)
         self.model = self.adapter.model_to_fp16(self.model)
-        self.optimizer = self.adapter.create_optimizer(self.model, self.config)
-        self.model = self.adapter.model_to_ddp(self.model)
+        self.optimizer = self.adapter.create_optimizer(self.model)
+        # self.model = self.adapter.model_to_ddp(self.model)
         self.lr_scheduler = create_scheduler(self.optimizer, self.config)
         self.grad_scaler = self.adapter.create_grad_scaler()
 
-    def train_one_epoch(self, epoch, print_freq=50, warmup=False, scaler=None):
+    def train_one_epoch(self, dataloader, epoch, print_freq=50, warmup=True, scaler=None):
         state = self.training_state
         driver = self.driver
         device = self.device
@@ -64,11 +76,11 @@ class Trainer:
 
         mean_loss, lr = utils.train_one_epoch(model,
                                               optimizer,
-                                              self.dataloader,
+                                              dataloader,
                                               device,
                                               epoch,
-                                              args.print_freq,
-                                              warmup=True,
+                                              print_freq,
+                                              warmup=warmup,
                                               scaler=scaler)
 
         return mean_loss, lr

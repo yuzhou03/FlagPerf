@@ -35,7 +35,7 @@ def parse_args():
                         "single node multi-proc training, the "
                         "--master_addr can simply be 127.0.0.1")
     parser.add_argument("--master_port",
-                        default=29501,
+                        default=29503,
                         type=int,
                         help="Master node (rank 0)'s free port that needs to "
                         "be used for communication during distributed "
