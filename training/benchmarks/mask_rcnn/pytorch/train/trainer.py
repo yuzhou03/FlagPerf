@@ -66,13 +66,16 @@ class Trainer:
         self.lr_scheduler = create_scheduler(self.optimizer, self.config)
         self.grad_scaler = self.adapter.create_grad_scaler()
 
-    def train_one_epoch(self, dataloader, epoch, print_freq=50, warmup=True, scaler=None):
+    def train_one_epoch(self,
+                        dataloader,
+                        epoch,
+                        print_freq=50,
+                        warmup=True,
+                        scaler=None):
+        
         state = self.training_state
         driver = self.driver
         device = self.device
-        # device = torch.device("cpu")
-        print(f"train_one_epoch device: {device}")
-
         model = self.model
         optimizer = self.optimizer
         driver.event(Event.EPOCH_BEGIN, state.epoch)
@@ -82,7 +85,7 @@ class Trainer:
                                               dataloader,
                                               device,
                                               epoch,
-                                              print_freq,
+                                              print_freq=print_freq,
                                               warmup=warmup,
                                               scaler=scaler)
 
