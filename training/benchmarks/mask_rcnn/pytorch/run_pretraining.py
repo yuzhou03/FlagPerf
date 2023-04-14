@@ -190,7 +190,7 @@ def main() -> Tuple[Any, Any]:
             model_without_ddp = trainer.model
             if config.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(
-                    model, device_ids=[config.gpu])
+                     trainer.model, device_ids=[config.gpu])
                 model_without_ddp = model.module
 
             save_files = {
