@@ -4,7 +4,10 @@ vendor: str = None
 # model name
 name: str = "Mask_RCNN"
 
+# train/eval flag
 do_train = True
+
+# fp16 training flag
 fp16 = False
 # =========================================================
 # data
@@ -78,11 +81,12 @@ sync_bn: bool = False
 
 gpu: int = None
 
+# distributed training
 distributed: bool = False
 
 load_pretained: bool = True
 
-# number of classes, NOTE: including bg class
+# number of classes, NOTE: including background class
 num_classes: int = 91
 
 # pretrained path
