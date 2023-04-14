@@ -51,8 +51,6 @@ def main() -> Tuple[Any, Any]:
     config = model_driver.config
     device = Device.get_device(config)
 
-
-
     # mkdir if necessary
     if config.output_dir:
         mkdir(config.output_dir)
@@ -150,7 +148,10 @@ def main() -> Tuple[Any, Any]:
             not training_state.end_training:
         epoch += 1
         training_state.epoch = epoch
-        mean_loss, lr = trainer.train_one_epoch(train_dataloader, epoch)
+        mean_loss, lr = trainer.train_one_epoch(train_dataloader,
+                                                epoch,
+                                                print_freq=config.print_freq,
+                                                scaler=trainer.grad_scaler)
 
         # update learning rate
         trainer.lr_scheduler.step()
