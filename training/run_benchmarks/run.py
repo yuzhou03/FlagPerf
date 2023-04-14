@@ -374,7 +374,7 @@ def clean_containers_env_cluster(dp_path, container_name, nnodes):
     '''Clean containers environments in the cluster. It will stop containers,
        and stop monitors.'''
     RUN_LOGGER.info("a) Stop containers......")
-    stop_container_in_cluster(dp_path, container_name, nnodes)
+    # stop_container_in_cluster(dp_path, container_name, nnodes)
     RUN_LOGGER.info("b) Stop monitors......")
     stop_monitors_in_cluster(dp_path, nnodes)
 

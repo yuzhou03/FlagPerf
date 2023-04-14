@@ -1,3 +1,5 @@
+vendor:str = "nvidia"
+data_dir: str = "/mnt/data/maskrcnn/train/"
 train_batch_size = 8
 eval_batch_size = 8
 
@@ -16,3 +18,4 @@ log_freq = 1
 seed = 10483
 max_samples_termination = 5553080
 training_event = None
+

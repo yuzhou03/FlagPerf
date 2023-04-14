@@ -51,9 +51,7 @@ def main() -> Tuple[Any, Any]:
     config = model_driver.config
     device = Device.get_device(config)
 
-    print(config)
 
-    print(device)
 
     # mkdir if necessary
     if config.output_dir:
