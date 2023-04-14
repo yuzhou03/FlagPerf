@@ -151,8 +151,3 @@ class CocoDetection(data.Dataset):
     def collate_fn(batch):
         return tuple(zip(*batch))
 
-
-if __name__ == '__main__':
-    train = CocoDetection("/data/coco2017", dataset="train")
-    print(len(train))
-    t = train[0]

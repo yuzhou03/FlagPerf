@@ -197,7 +197,6 @@ def main() -> Tuple[Any, Any]:
                 'model': model_without_ddp.state_dict(),
                 'optimizer': trainer.optimizer.state_dict(),
                 'lr_scheduler': trainer.lr_scheduler.state_dict(),
-                'args': config,
                 'epoch': epoch
             }
             if config.amp:
