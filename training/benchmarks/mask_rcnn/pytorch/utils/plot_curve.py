@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_loss_and_lr(train_loss, learning_rate):
-    """plot_loss_and_lr"""
+    """plot loss and lr"""
     try:
         x = list(range(len(train_loss)))
         fig, ax1 = plt.subplots(1, 1)
