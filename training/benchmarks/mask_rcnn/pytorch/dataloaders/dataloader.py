@@ -2,8 +2,8 @@
 import os
 import sys
 import torch
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
+from .transforms import Compose, ToTensor, RandomHorizontalFlip
+
 
 CURR_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../../")))
@@ -15,12 +15,12 @@ from utils.train import create_aspect_ratio_groups, GroupedBatchSampler
 
 data_transform = {
     "train":
-    transforms.Compose([
-        transforms.ToTensor(),
-        transforms.RandomHorizontalFlip(0.5),
+    Compose([
+        ToTensor(),
+        RandomHorizontalFlip(0.5),
     ]),
     "val":
-    transforms.Compose([transforms.ToTensor()])
+    Compose([ToTensor()])
 }
 
 

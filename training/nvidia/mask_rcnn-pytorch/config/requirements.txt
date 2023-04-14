@@ -1,8 +1,8 @@
-torch>=1.8.0
+torch
 torchvision
 pycocotools
 lxml
 matplotlib
 numpy
 tqdm
-Pillow
+# Pillow

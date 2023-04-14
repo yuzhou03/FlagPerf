@@ -130,6 +130,7 @@ class CocoDetection(data.Dataset):
 
         w, h = img.size
         target = self.parse_targets(img_id, coco_target, w, h)
+
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 

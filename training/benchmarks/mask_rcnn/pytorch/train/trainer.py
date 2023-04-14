@@ -70,6 +70,9 @@ class Trainer:
         state = self.training_state
         driver = self.driver
         device = self.device
+        # device = torch.device("cpu")
+        print(f"train_one_epoch device: {device}")
+
         model = self.model
         optimizer = self.optimizer
         driver.event(Event.EPOCH_BEGIN, state.epoch)
