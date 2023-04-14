@@ -16,6 +16,10 @@ def train_one_epoch(model,
                     print_freq=50,
                     warmup=False,
                     scaler=None):
+    
+    # move model to device
+    model.to(device)
+
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter(
@@ -33,6 +37,7 @@ def train_one_epoch(model,
     mloss = torch.zeros(1).to(device)  # mean losses
     for i, [images, targets] in enumerate(
             metric_logger.log_every(data_loader, print_freq, header)):
+        # move input to device
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
