@@ -162,7 +162,7 @@ def main() -> Tuple[Any, Any]:
                                             device=device)
 
         # 只在主进程上进行写操作
-        if config.rank in [-1, 0]:
+        if config.local_rank in [-1, 0]:
             train_loss.append(mean_loss.item())
             learning_rate.append(lr)
             val_map.append(det_info[1])  # pascal mAP
@@ -223,7 +223,7 @@ def main() -> Tuple[Any, Any]:
 def plot_train_result(config, train_loss: list, learning_rate: list,
                       val_map: list):
     # 绘图
-    if config.rank in [-1, 0]:
+    if config.local_rank in [-1, 0]:
         # plot loss and lr curve
         if len(train_loss) != 0 and len(learning_rate) != 0:
             from utils.plot_curve import plot_loss_and_lr

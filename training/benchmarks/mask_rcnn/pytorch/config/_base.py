@@ -56,14 +56,12 @@ num_epochs_to_generate_seeds_for: int = 2
 # frequency of logging loss. If not positive, no logging is provided for training loss
 log_freq: int = 10
 
+# print frequency
 print_freq: int = 50
-
-# Whether to resume training from checkpoint.
-# If set, precedes init_checkpoint/init_tf_checkpoint
-resume_from_checkpoint: bool = False
 
 # device
 device: str = None
+# num of device
 n_device: int = 1
 
 # Automatic mixed precision
@@ -84,10 +82,15 @@ distributed: bool = False
 
 load_pretained: bool = True
 
+# number of classes, NOTE: including bg class
 num_classes: int = 91
+
+# pretrained path
 pretrained_path: str = "checkpoint/resnet50.pth"
+# coco weights pretrained_path
 coco_weights_pretrained_path: str = "checkpoint/maskrcnn_resnet50_fpn_coco.pth"
 
+# steps for LR decay
 lr_steps: list = [16, 22]
 
 # decrease lr by a factor of lr-gamma
