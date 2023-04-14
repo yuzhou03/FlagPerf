@@ -84,9 +84,9 @@ distributed: bool = False
 
 load_pretained: bool = True
 
-num_classes: int = 90
-pretrained_path: str = "./checkpoint/resnet50.pth"
-coco_weights_pretrained_path: str = "./checkpoint/maskrcnn_resnet50_fpn_coco.pth"
+num_classes: int = 91
+pretrained_path: str = "checkpoint/resnet50.pth"
+coco_weights_pretrained_path: str = "checkpoint/maskrcnn_resnet50_fpn_coco.pth"
 
 lr_steps: list = [16, 22]
 
