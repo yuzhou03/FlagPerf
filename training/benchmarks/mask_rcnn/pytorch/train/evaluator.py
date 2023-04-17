@@ -3,10 +3,14 @@
 以及每个类别的mAP(IoU=0.5)
 """
 
+import numpy as np
+
 from model.backbone import resnet50_fpn_backbone
 from model.network_files import MaskRCNN
 from dataloaders.dataset_coco import CocoDetection
 from utils.train import EvalCOCOMetric
+
+
 
 
 class Evaluator:

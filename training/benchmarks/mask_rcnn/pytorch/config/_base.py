@@ -25,16 +25,20 @@ train_batch_size: int = 8
 eval_batch_size: int = 8
 dist_backend: str = 'nccl'
 
-lr: float = 0.1
+lr: float = 0.08
 weight_decay: float = 1e-4
 gradient_accumulation_steps: int = 1
 momentum: float = 0.9
+# steps for LR decay
+lr_steps: list = [16, 22]
+# decrease lr by a factor of lr-gamma
+lr_gamma: float = 0.1
 
 max_steps: int = 900000
 seed: int = 41
 
 # Stop training after reaching this accuracy
-target_mAP: float = 0.58
+target_mAP: float = 0.46
 
 # Sample to begin performing eval.
 eval_iter_start_samples: int = 100
@@ -93,9 +97,3 @@ num_classes: int = 91
 pretrained_path: str = "checkpoint/resnet50.pth"
 # coco weights pretrained_path
 coco_weights_pretrained_path: str = "checkpoint/maskrcnn_resnet50_fpn_coco.pth"
-
-# steps for LR decay
-lr_steps: list = [16, 22]
-
-# decrease lr by a factor of lr-gamma
-lr_gamma: float = 0.1

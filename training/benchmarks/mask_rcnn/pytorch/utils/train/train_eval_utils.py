@@ -6,6 +6,7 @@ import torch
 
 import utils.train.distributed_utils as utils
 from .coco_eval import EvalCOCOMetric
+from driver import dist_pytorch
 
 
 def train_one_epoch(model,
@@ -13,10 +14,12 @@ def train_one_epoch(model,
                     data_loader,
                     device,
                     epoch,
+                    state,
+                    config,
                     print_freq=50,
                     warmup=False,
                     scaler=None):
-    
+
     # move model to device
     model.to(device)
 
@@ -25,6 +28,8 @@ def train_one_epoch(model,
     metric_logger.add_meter(
         'lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
+
+    epoch_start_num_sample = state.num_trained_samples
 
     lr_scheduler = None
     if epoch == 0 and warmup is True:  # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
@@ -37,6 +42,11 @@ def train_one_epoch(model,
     mloss = torch.zeros(1).to(device)  # mean losses
     for i, [images, targets] in enumerate(
             metric_logger.log_every(data_loader, print_freq, header)):
+
+        state.global_steps += 1
+        state.num_trained_samples = (state.global_steps *
+                                     dist_pytorch.global_batch_size(config))
+
         # move input to device
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -44,7 +54,6 @@ def train_one_epoch(model,
         # 混合精度训练上下文管理器，如果在CPU环境中不起任何作用
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
-
             losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purpose
@@ -75,6 +84,9 @@ def train_one_epoch(model,
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         now_lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=now_lr)
+
+    epoch_start_num_sample += len(data_loader.dataset)
+    state.num_trained_samples = epoch_start_num_sample  
 
     return mloss, now_lr
 
