@@ -63,7 +63,7 @@ def build_train_dataloader(
         batch_sampler=train_batch_sampler,
         num_workers=config.num_workers,
         collate_fn=train_dataset.collate_fn)
-    return data_loader
+    return data_loader, train_sampler
 
 
 def build_eval_dataloader(config, train_dataset, eval_dataset):

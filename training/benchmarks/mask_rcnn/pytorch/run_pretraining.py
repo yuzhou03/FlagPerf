@@ -78,7 +78,7 @@ def main() -> Tuple[Any, Any]:
     # 构建dataset, dataloader 【train && validate】
     train_dataset = build_train_dataset(config)
     eval_dataset = build_eval_dataset(config)
-    train_dataloader = build_train_dataloader(config, train_dataset)
+    train_dataloader, train_sampler = build_train_dataloader(config, train_dataset)
     eval_dataloader = build_eval_dataloader(config, train_dataset,
                                             eval_dataset)
 
@@ -146,6 +146,10 @@ def main() -> Tuple[Any, Any]:
     epoch = -1
     while training_state.global_steps < config.max_steps and \
             not training_state.end_training:
+
+        if config.distributed:
+            train_sampler.set_epoch(epoch)
+
         epoch += 1
         training_state.epoch = epoch
         mean_loss, lr = trainer.train_one_epoch(train_dataloader,
@@ -183,7 +187,7 @@ def main() -> Tuple[Any, Any]:
 
             # 写seg结果
             with open(seg_results_file, "a") as f:
-                # 写入的数据包括coco指标还有loss和learning rate
+                # 写入的数据包括coco指标, 还有loss和learning rate
                 result_info = [
                     f"{i:.4f}" for i in seg_info + [mean_loss.item()]
                 ] + [f"{lr:.6f}"]
@@ -208,7 +212,7 @@ def main() -> Tuple[Any, Any]:
                 save_files["scaler"] = trainer.grad_scaler.state_dict()
 
             checkpoint_path = os.path.join(config.output_dir,
-                                            f'model_{epoch}.pth')
+                                           f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
 
         end_training = trainer.detect_training_status()
