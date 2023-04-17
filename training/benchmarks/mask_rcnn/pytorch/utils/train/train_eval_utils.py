@@ -103,10 +103,10 @@ def evaluate(model, data_loader, device):
 
     det_metric = EvalCOCOMetric(data_loader.dataset.coco,
                                 iou_type="bbox",
-                                results_file_name="det_results.json")
+                                results_file_name="output/result/det_results.json")
     seg_metric = EvalCOCOMetric(data_loader.dataset.coco,
                                 iou_type="segm",
-                                results_file_name="seg_results.json")
+                                results_file_name="output/result/seg_results.json")
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
 
