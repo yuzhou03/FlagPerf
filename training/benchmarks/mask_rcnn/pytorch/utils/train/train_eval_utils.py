@@ -20,9 +20,6 @@ def train_one_epoch(model,
                     warmup=False,
                     scaler=None):
 
-    if state.end_training:
-        return None, None                
-
     # move model to device
     model.to(device)
 
@@ -35,10 +32,10 @@ def train_one_epoch(model,
     epoch_start_num_sample = state.num_trained_samples
 
     lr_scheduler = None
-    if epoch == 0 and warmup is True:  # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
+    # 当训练第一轮（epoch=0）时，启用warmup训练方式，可理解为热身训练
+    if epoch == 0 and warmup is True:
         warmup_factor = 1.0 / 1000
         warmup_iters = min(1000, len(data_loader) - 1)
-
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters,
                                                  warmup_factor)
 
@@ -89,7 +86,7 @@ def train_one_epoch(model,
         metric_logger.update(lr=now_lr)
 
     epoch_start_num_sample += len(data_loader.dataset)
-    state.num_trained_samples = epoch_start_num_sample  
+    state.num_trained_samples = epoch_start_num_sample
 
     return mloss, now_lr
 
@@ -101,12 +98,16 @@ def evaluate(model, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test: "
 
-    det_metric = EvalCOCOMetric(data_loader.dataset.coco,
-                                iou_type="bbox",
-                                results_file_name="output/result/det_results.json")
-    seg_metric = EvalCOCOMetric(data_loader.dataset.coco,
-                                iou_type="segm",
-                                results_file_name="output/result/seg_results.json")
+    det_metric = EvalCOCOMetric(
+        data_loader.dataset.coco,
+        iou_type="bbox",
+        results_file_name="output/result/det_results.json")
+
+    seg_metric = EvalCOCOMetric(
+        data_loader.dataset.coco,
+        iou_type="segm",
+        results_file_name="output/result/seg_results.json")
+
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
 
