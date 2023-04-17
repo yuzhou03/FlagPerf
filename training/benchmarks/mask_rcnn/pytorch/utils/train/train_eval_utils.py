@@ -133,11 +133,7 @@ def evaluate(model, data_loader, device):
     det_metric.synchronize_results()
     seg_metric.synchronize_results()
 
-    if utils.is_main_process():
-        coco_info = det_metric.evaluate()
-        seg_info = seg_metric.evaluate()
-    else:
-        coco_info = None
-        seg_info = None
+    coco_info = det_metric.evaluate()
+    seg_info = seg_metric.evaluate()
 
     return coco_info, seg_info
