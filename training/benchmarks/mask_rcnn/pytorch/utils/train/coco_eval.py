@@ -161,7 +161,8 @@ class EvalCOCOMetric:
     def evaluate(self):
         """evaluate"""
         # 只在主进程上评估即可
-        if is_main_process():
+        # if is_main_process():
+        if True:
             # accumulate predictions from all images
             coco_true = self.coco
             coco_pre = coco_true.loadRes(self.results_file_name)

@@ -167,8 +167,6 @@ def main() -> Tuple[Any, Any]:
 
         if det_info is not None:
             training_state.eval_mAP = det_info[1]
-            # dist_pytorch.main_proc_print(
-            #     f"training_state.eval_mAP:{training_state.eval_mAP}")
             print(f"training_state.eval_mAP:{training_state.eval_mAP}")
 
         # 只在主进程上进行写操作
@@ -216,7 +214,7 @@ def main() -> Tuple[Any, Any]:
                                            f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
 
-            trainer.detect_training_status()
+        trainer.detect_training_status()
 
 
     # TRAIN_END事件
@@ -237,11 +235,6 @@ def plot_train_result(config, train_loss: list, learning_rate: list,
                       val_map: list):
     # 绘图
     if config.local_rank in [-1, 0]:
-
-        print(f"train_loss:{train_loss}")
-        print(f"learning_rate:{learning_rate}")
-        print(f"val_map:{val_map}")
-
         # plot loss and lr curve
         if len(train_loss) != 0 and len(learning_rate) != 0:
             from utils.plot_curve import plot_loss_and_lr
