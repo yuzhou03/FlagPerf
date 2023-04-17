@@ -156,6 +156,9 @@ def main() -> Tuple[Any, Any]:
                                                 epoch,
                                                 print_freq=config.print_freq,
                                                 scaler=trainer.grad_scaler)
+        # process quit if end-training  
+        if mean_loss is None and lr is None:
+            break
 
         # update learning rate
         trainer.lr_scheduler.step()
@@ -215,11 +218,8 @@ def main() -> Tuple[Any, Any]:
                                            f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
 
-        end_training = trainer.detect_training_status()
+            trainer.detect_training_status()
 
-        if end_training:
-            dist_pytorch.main_proc_print(f"end_training: {end_training}")
-            break
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
