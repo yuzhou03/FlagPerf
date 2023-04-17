@@ -33,6 +33,7 @@ class TrainingState:
         """converged success"""
         self.end_training = True
         self.converged = True
+        print(f"converged_success. end_training:{self.end_training} converged:{self.converged}")
 
     def _is_property(self, value):
         status = [

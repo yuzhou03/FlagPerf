@@ -20,6 +20,9 @@ def train_one_epoch(model,
                     warmup=False,
                     scaler=None):
 
+    if state.end_training:
+        return None, None                
+
     # move model to device
     model.to(device)
 

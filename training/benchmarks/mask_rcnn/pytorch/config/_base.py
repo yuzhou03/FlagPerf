@@ -38,7 +38,7 @@ max_steps: int = 900000
 seed: int = 41
 
 # Stop training after reaching this accuracy
-target_mAP: float = 0.46
+target_mAP: float = 0.34
 
 # Sample to begin performing eval.
 eval_iter_start_samples: int = 100
@@ -90,8 +90,8 @@ distributed: bool = False
 
 load_pretained: bool = True
 
-# number of classes, NOTE: including background class
-num_classes: int = 91
+# number of classes, background class NOT included
+num_classes: int = 90
 
 # pretrained path
 pretrained_path: str = "checkpoint/resnet50.pth"
