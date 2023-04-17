@@ -39,17 +39,19 @@ def main() -> Tuple[Any, Any]:
     global logger
     global config
 
-    # 用来保存coco_info的文件
-    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    det_results_file = f"det_results_{now}.txt"
-    seg_results_file = f"seg_results_{now}.txt"
-
     # init
     init_helper = InitHelper(config)
     model_driver = init_helper.init_driver(globals(), locals())
 
     config = model_driver.config
     device = Device.get_device(config)
+
+    # 用来保存coco_info的文件
+    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    det_results_file = os.path.join(config.output_dir, "result",
+                                    f"det_results_{now}.txt")
+    seg_results_file = os.path.join(config.output_dir, "result",
+                                    f"seg_results_{now}.txt")
 
     # mkdir if necessary
     if config.output_dir:
@@ -78,7 +80,8 @@ def main() -> Tuple[Any, Any]:
     # 构建dataset, dataloader 【train && validate】
     train_dataset = build_train_dataset(config)
     eval_dataset = build_eval_dataset(config)
-    train_dataloader, train_sampler = build_train_dataloader(config, train_dataset)
+    train_dataloader, train_sampler = build_train_dataloader(
+        config, train_dataset)
     eval_dataloader = build_eval_dataloader(config, train_dataset,
                                             eval_dataset)
 
@@ -210,12 +213,11 @@ def main() -> Tuple[Any, Any]:
             if config.amp:
                 save_files["scaler"] = trainer.grad_scaler.state_dict()
 
-            checkpoint_path = os.path.join(config.output_dir,
+            checkpoint_path = os.path.join(config.output_dir, "checkpoint", 
                                            f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
 
         trainer.detect_training_status()
-
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)

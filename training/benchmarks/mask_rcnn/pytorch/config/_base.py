@@ -38,7 +38,7 @@ max_steps: int = 900000
 seed: int = 41
 
 # Stop training after reaching this accuracy
-target_mAP: float = 0.34
+target_mAP: float = 0.45
 
 # Sample to begin performing eval.
 eval_iter_start_samples: int = 100
