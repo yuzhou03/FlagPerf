@@ -156,9 +156,6 @@ def main() -> Tuple[Any, Any]:
                                                 epoch,
                                                 print_freq=config.print_freq,
                                                 scaler=trainer.grad_scaler)
-        # process quit if end-training  
-        if mean_loss is None and lr is None:
-            break
 
         # update learning rate
         trainer.lr_scheduler.step()
@@ -170,8 +167,9 @@ def main() -> Tuple[Any, Any]:
 
         if det_info is not None:
             training_state.eval_mAP = det_info[1]
-            dist_pytorch.main_proc_print(
-                f"training_state.eval_mAP:{training_state.eval_mAP}")
+            # dist_pytorch.main_proc_print(
+            #     f"training_state.eval_mAP:{training_state.eval_mAP}")
+            print(f"training_state.eval_mAP:{training_state.eval_mAP}")
 
         # 只在主进程上进行写操作
         if config.local_rank in [-1, 0]:
