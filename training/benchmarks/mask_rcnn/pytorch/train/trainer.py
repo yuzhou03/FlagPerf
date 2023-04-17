@@ -1,3 +1,5 @@
+import math
+import time
 import torch
 from torch.types import Device
 import os
@@ -10,18 +12,9 @@ import utils.train.train_eval_utils as utils
 from train.evaluator import Evaluator
 from train.training_state import TrainingState
 
-import config
-
 CURR_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../")))
 from driver import Driver, Event, dist_pytorch
-
-
-def process_batch(batch, device):
-    """Process batch and produce inputs for the model."""
-    batch = {t: batch[t].to(device) for t in batch if t != 'answer_idx'}
-
-    return batch
 
 
 class Trainer:
@@ -62,7 +55,6 @@ class Trainer:
         self.model = self.adapter.convert_model(self.model)
         self.model = self.adapter.model_to_fp16(self.model)
         self.optimizer = self.adapter.create_optimizer(self.model)
-        # self.model = self.adapter.model_to_ddp(self.model)
         self.lr_scheduler = create_scheduler(self.optimizer, self.config)
         self.grad_scaler = self.adapter.create_grad_scaler()
 
@@ -72,7 +64,7 @@ class Trainer:
                         print_freq=50,
                         warmup=True,
                         scaler=None):
-        
+
         state = self.training_state
         driver = self.driver
         device = self.device
@@ -85,27 +77,25 @@ class Trainer:
                                               dataloader,
                                               device,
                                               epoch,
+                                              state=state,
+                                              config=self.config,
                                               print_freq=print_freq,
                                               warmup=warmup,
                                               scaler=scaler)
+        driver.event(Event.EPOCH_END, state.epoch)
 
         return mean_loss, lr
 
-    def forward(self, batch):
-        """forward pass"""
-        data = batch
-        tokens, labels, position_ids, attention_mask = data['text'], data[
-            'label'], data['position'], data['mask']
-        target_ids, logit_mask = data['target'], data['logit_mask']
+    def detect_training_status(self):
+        state = self.training_state
+        config = self.config
+        if state.eval_mAP >= config.target_mAP:
+            dist_pytorch.main_proc_print(
+                f"converged_success. eval_mAP: {state.eval_mAP}, target_mAP: {config.target_mAP}"
+            )
+            state.converged_success()
 
-        result = self.model(tokens, position_ids, attention_mask, target_ids,
-                            logit_mask)
-        logits, *mems = result
+        if state.num_trained_samples > config.max_samples_termination:
+            state.end_training = True
 
-        loss_mask = data["loss_mask"]
-        logits = logits * loss_mask - 10000.0 * (1.0 - loss_mask)
-
-        loss_func = torch.nn.CrossEntropyLoss()
-        loss = loss_func(logits.contiguous().float(), labels)
-
-        return loss, mems
+        return state.end_training

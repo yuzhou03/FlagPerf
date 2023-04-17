@@ -66,7 +66,7 @@ def main() -> Tuple[Any, Any]:
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
 
-    # TODO 得到seed
+    # 得到seed
     """
     这里获取seed的可行方式：
     1. 配置文件中的seed
@@ -75,7 +75,7 @@ def main() -> Tuple[Any, Any]:
     """
     init_helper.set_seed(config.seed, model_driver.config.vendor)
 
-    # TODO  构建dataset, dataloader 【train && validate】
+    # 构建dataset, dataloader 【train && validate】
     train_dataset = build_train_dataset(config)
     eval_dataset = build_eval_dataset(config)
     train_dataloader = build_train_dataloader(config, train_dataset)
@@ -105,13 +105,13 @@ def main() -> Tuple[Any, Any]:
     # evaluation统计
     init_evaluation_start = time.time()  # evaluation起始时间，单位为秒
     """
-    TODO 实现Evaluator 类的evaluate()方法，用于返回关键指标信息，如loss，eval_embedding_average等。
+    实现Evaluator 类的evaluate()方法，用于返回关键指标信息，如loss，eval_embedding_average等。
     例如：training_state.eval_avg_loss, training_state.eval_embedding_average = evaluator.evaluate(trainer)
     """
 
     init_evaluation_end = time.time()  # evaluation结束时间，单位为秒
     """
-    TODO 收集eval关键信息，用于日志输出
+    收集eval关键信息，用于日志输出
     例如： init_evaluation_info = dict(
         eval_loss=training_state.eval_avg_loss,
         eval_embedding_average=training_state.eval_embedding_average,
@@ -161,6 +161,11 @@ def main() -> Tuple[Any, Any]:
                                             eval_dataloader,
                                             device=device)
 
+        if det_info is not None:
+            training_state.eval_mAP = det_info[1]
+            dist_pytorch.main_proc_print(
+                f"training_state.eval_mAP:{training_state.eval_mAP}")
+
         # 只在主进程上进行写操作
         if config.local_rank in [-1, 0]:
             train_loss.append(mean_loss.item())
@@ -190,7 +195,7 @@ def main() -> Tuple[Any, Any]:
             model_without_ddp = trainer.model
             if config.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(
-                     trainer.model, device_ids=[config.gpu])
+                    trainer.model, device_ids=[config.gpu])
                 model_without_ddp = model.module
 
             save_files = {
@@ -203,8 +208,14 @@ def main() -> Tuple[Any, Any]:
                 save_files["scaler"] = trainer.grad_scaler.state_dict()
 
             checkpoint_path = os.path.join(config.output_dir,
-                                           f'model_{epoch}.pth')
+                                            f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
+
+        end_training = trainer.detect_training_status()
+
+        if end_training:
+            dist_pytorch.main_proc_print(f"end_training: {end_training}")
+            break
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
@@ -213,6 +224,7 @@ def main() -> Tuple[Any, Any]:
     # 训练时长，单位为秒
     raw_train_time_ms = raw_train_end_time - raw_train_start_time
     training_state.raw_train_time = raw_train_time_ms / 1e+3
+
     # 绘图
     plot_train_result(config, train_loss, learning_rate, val_map)
 
@@ -223,6 +235,11 @@ def plot_train_result(config, train_loss: list, learning_rate: list,
                       val_map: list):
     # 绘图
     if config.local_rank in [-1, 0]:
+
+        print(f"train_loss:{train_loss}")
+        print(f"learning_rate:{learning_rate}")
+        print(f"val_map:{val_map}")
+
         # plot loss and lr curve
         if len(train_loss) != 0 and len(learning_rate) != 0:
             from utils.plot_curve import plot_loss_and_lr
@@ -252,7 +269,7 @@ if __name__ == "__main__":
             "e2e_time": e2e_time,
             "training_samples_per_second": training_perf,
             "converged": state.converged,
-            "final_accuracy": state.eval_accuracy,
+            "final_mAP": state.eval_mAP,
             "raw_train_time": state.raw_train_time,
             "init_time": state.init_time,
         }
