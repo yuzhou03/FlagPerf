@@ -14,11 +14,10 @@ from utils.train import EvalCOCOMetric
 
 
 class Evaluator:
-    """Evaluator"""
 
-    def __init__(self, config, dataloader):
+    def __init__(self, config, eval_dataloader):
         self.config = config
-        self.eval_dataloader = dataloader
+        self.eval_dataloader = eval_dataloader
 
     def evaluate(self, trainer):
         pass

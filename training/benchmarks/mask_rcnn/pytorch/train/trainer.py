@@ -15,6 +15,7 @@ from train.training_state import TrainingState
 CURR_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../")))
 from driver import Driver, Event, dist_pytorch
+from utils.train import save_on_master
 
 
 class Trainer:
@@ -48,7 +49,7 @@ class Trainer:
             f"pretrain_path:{pretrain_path}, coco_weights_pretrained_path:{coco_weights_pretrained_path}"
         )
         self.model = create_model(
-            num_classes=config.num_classes+1,
+            num_classes=config.num_classes + 1,
             load_pretrain_weights=True,
             pretrain_path=pretrain_path,
             coco_weights_path=coco_weights_pretrained_path)
@@ -60,7 +61,13 @@ class Trainer:
 
     def train_one_epoch(self,
                         dataloader,
+                        eval_dataloader,
                         epoch,
+                        train_loss: list,
+                        learning_rate: list,
+                        val_map: list,
+                        det_results_file: str,
+                        seg_results_file: str,
                         print_freq=50,
                         warmup=True,
                         scaler=None):
@@ -70,6 +77,7 @@ class Trainer:
         device = self.device
         model = self.model
         optimizer = self.optimizer
+        config = self.config
         driver.event(Event.EPOCH_BEGIN, state.epoch)
 
         mean_loss, lr = utils.train_one_epoch(model,
@@ -83,6 +91,63 @@ class Trainer:
                                               warmup=warmup,
                                               scaler=scaler)
         driver.event(Event.EPOCH_END, state.epoch)
+
+        # update learning rate
+        self.lr_scheduler.step()
+
+        # evaluate after every epoch
+        det_info, seg_info = utils.evaluate(model, eval_dataloader, device)
+
+        if det_info is not None:
+            state.eval_mAP = det_info[1]
+            print(f"training_state.eval_mAP:{state.eval_mAP}")
+
+        # 只在主进程上进行写操作
+        if config.local_rank in [-1, 0]:
+            train_loss.append(mean_loss.item())
+            learning_rate.append(lr)
+            val_map.append(det_info[1])  # pascal mAP
+
+            # 写det结果
+            with open(det_results_file, "a") as f:
+                # 写入的数据包括coco指标，还有loss和learning rate
+                result_info = [
+                    f"{i:.4f}" for i in det_info + [mean_loss.item()]
+                ] + [f"{lr:.6f}"]
+                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                f.write(txt + "\n")
+
+            # 写seg结果
+            with open(seg_results_file, "a") as f:
+                # 写入的数据包括coco指标, 还有loss和learning rate
+                result_info = [
+                    f"{i:.4f}" for i in seg_info + [mean_loss.item()]
+                ] + [f"{lr:.6f}"]
+                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                f.write(txt + "\n")
+
+        if config.output_dir:
+            # 只在主进程上执行保存权重操作
+            model_without_ddp = model
+            if config.distributed:
+                model = torch.nn.parallel.DistributedDataParallel(
+                    model, device_ids=[config.gpu])
+                model_without_ddp = model.module
+
+            save_files = {
+                'model': model_without_ddp.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'lr_scheduler': self.lr_scheduler.state_dict(),
+                'epoch': epoch
+            }
+            if config.amp:
+                save_files["scaler"] = self.grad_scaler.state_dict()
+
+            checkpoint_path = os.path.join(config.output_dir, "checkpoint",
+                                           f'model_{epoch}.pth')
+            save_on_master(save_files, checkpoint_path)
+
+        self.detect_training_status()
 
         return mean_loss, lr
 

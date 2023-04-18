@@ -160,23 +160,18 @@ class EvalCOCOMetric:
 
     def evaluate(self):
         """evaluate"""
-        # 只在主进程上评估即可
-        # if is_main_process():
-        if True:
-            # accumulate predictions from all images
-            coco_true = self.coco
-            coco_pre = coco_true.loadRes(self.results_file_name)
+        # accumulate predictions from all images
+        coco_true = self.coco
+        coco_pre = coco_true.loadRes(self.results_file_name)
 
-            self.coco_evaluator = COCOeval(cocoGt=coco_true,
-                                           cocoDt=coco_pre,
-                                           iouType=self.iou_type)
+        self.coco_evaluator = COCOeval(cocoGt=coco_true,
+                                       cocoDt=coco_pre,
+                                       iouType=self.iou_type)
 
-            self.coco_evaluator.evaluate()
-            self.coco_evaluator.accumulate()
-            print(f"IoU metric: {self.iou_type}")
-            self.coco_evaluator.summarize()
+        self.coco_evaluator.evaluate()
+        self.coco_evaluator.accumulate()
+        print(f"IoU metric: {self.iou_type}")
+        self.coco_evaluator.summarize()
 
-            coco_info = self.coco_evaluator.stats.tolist()  # numpy to list
-            return coco_info
-        else:
-            return None
+        coco_info = self.coco_evaluator.stats.tolist()  # numpy to list
+        return coco_info
