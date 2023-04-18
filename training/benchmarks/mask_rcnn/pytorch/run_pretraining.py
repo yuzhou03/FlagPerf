@@ -155,69 +155,16 @@ def main() -> Tuple[Any, Any]:
 
         epoch += 1
         training_state.epoch = epoch
-        mean_loss, lr = trainer.train_one_epoch(train_dataloader,
-                                                epoch,
-                                                print_freq=config.print_freq,
-                                                scaler=trainer.grad_scaler)
-
-        # update learning rate
-        trainer.lr_scheduler.step()
-
-        # evaluate after every epoch
-        det_info, seg_info = utils.evaluate(trainer.model,
-                                            eval_dataloader,
-                                            device=device)
-
-        if det_info is not None:
-            training_state.eval_mAP = det_info[1]
-            print(f"training_state.eval_mAP:{training_state.eval_mAP}")
-
-        # 只在主进程上进行写操作
-        if config.local_rank in [-1, 0]:
-            train_loss.append(mean_loss.item())
-            learning_rate.append(lr)
-            val_map.append(det_info[1])  # pascal mAP
-
-            # 写det结果
-            with open(det_results_file, "a") as f:
-                # 写入的数据包括coco指标还有loss和learning rate
-                result_info = [
-                    f"{i:.4f}" for i in det_info + [mean_loss.item()]
-                ] + [f"{lr:.6f}"]
-                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-                f.write(txt + "\n")
-
-            # 写seg结果
-            with open(seg_results_file, "a") as f:
-                # 写入的数据包括coco指标, 还有loss和learning rate
-                result_info = [
-                    f"{i:.4f}" for i in seg_info + [mean_loss.item()]
-                ] + [f"{lr:.6f}"]
-                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-                f.write(txt + "\n")
-
-        if config.output_dir:
-            # 只在主进程上执行保存权重操作
-            model_without_ddp = trainer.model
-            if config.distributed:
-                model = torch.nn.parallel.DistributedDataParallel(
-                    trainer.model, device_ids=[config.gpu])
-                model_without_ddp = model.module
-
-            save_files = {
-                'model': model_without_ddp.state_dict(),
-                'optimizer': trainer.optimizer.state_dict(),
-                'lr_scheduler': trainer.lr_scheduler.state_dict(),
-                'epoch': epoch
-            }
-            if config.amp:
-                save_files["scaler"] = trainer.grad_scaler.state_dict()
-
-            checkpoint_path = os.path.join(config.output_dir, "checkpoint", 
-                                           f'model_{epoch}.pth')
-            save_on_master(save_files, checkpoint_path)
-
-        trainer.detect_training_status()
+        trainer.train_one_epoch(train_dataloader,
+                                eval_dataloader,
+                                epoch,
+                                train_loss,
+                                learning_rate,
+                                val_map,
+                                det_results_file,
+                                seg_results_file,
+                                print_freq=config.print_freq,
+                                scaler=trainer.grad_scaler)
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
@@ -264,6 +211,7 @@ if __name__ == "__main__":
                          state.global_steps) / state.raw_train_time
         finished_info = {
             "e2e_time": e2e_time,
+            "num_trained_samples": state.num_trained_samples,
             "training_samples_per_second": training_perf,
             "converged": state.converged,
             "final_mAP": state.eval_mAP,

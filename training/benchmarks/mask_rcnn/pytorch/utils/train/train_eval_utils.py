@@ -44,9 +44,6 @@ def train_one_epoch(model,
             metric_logger.log_every(data_loader, print_freq, header)):
 
         state.global_steps += 1
-        state.num_trained_samples = (state.global_steps *
-                                     dist_pytorch.global_batch_size(config))
-
         # move input to device
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
