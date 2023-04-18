@@ -125,6 +125,31 @@ def main() -> Tuple[Any, Any]:
                                 init_evaluation_start)
     model_driver.event(Event.INIT_EVALUATION, init_evaluation_info)
 
+
+    model_without_ddp = trainer.model
+    if config.distributed:
+        model_without_ddp = trainer.model
+
+
+    # 如果传入resume参数，即上次训练的权重地址，则接着上次的参数训练
+    if config.resume:
+        # If map_location is missing, torch.load will first load the module to CPU
+        # and then copy each parameter to where it was saved,
+        # which would result in all processes on the same machine using the same set of devices.
+        checkpoint = torch.load(config.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        model_without_ddp.load_state_dict(checkpoint['model'])
+        trainer.optimizer.load_state_dict(checkpoint['optimizer'])
+        trainer.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        config.start_epoch = checkpoint['epoch'] + 1
+
+        dist_pytorch.main_proc_print(f"amp: {config.amp} scaler in checkpoint:{'scaler' in checkpoint}")
+
+        if config.amp and "scaler" in checkpoint:
+            trainer.scaler.load_state_dict(checkpoint["scaler"])
+        dist_pytorch.main_proc_print(f"resume training from checkpoint. checkpoint: {config.resume}, start_epoch:{config.start_epoch}")
+
+
+
     # do evaluation
     if not config.do_train:
         return config, training_state
