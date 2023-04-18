@@ -51,14 +51,10 @@ class Trainer:
             coco_weights_path=coco_weights_pretrained_path)
         self.model = self.adapter.convert_model(self.model)
         self.model = self.adapter.model_to_fp16(self.model)
-<<<<<<< HEAD
-
         # Attention: remember to move model to device before create_optimizer, otherwise, you will get a RuntimeError:
         # RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! when resuming training
         self.model.to(self.device)
 
-=======
->>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
         self.optimizer = self.adapter.create_optimizer(self.model)
         self.lr_scheduler = create_scheduler(self.optimizer, self.config)
         self.grad_scaler = self.adapter.create_grad_scaler()
@@ -137,7 +133,6 @@ class Trainer:
                     model, device_ids=[config.gpu])
                 model_without_ddp = model.module
 
-<<<<<<< HEAD
             train_state = {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
@@ -151,20 +146,6 @@ class Trainer:
             checkpoint_path = os.path.join(config.output_dir, "checkpoint",
                                            f'model_{epoch}.pth')
             save_on_master(train_state, checkpoint_path)
-=======
-            save_files = {
-                'model': model_without_ddp.state_dict(),
-                'optimizer': self.optimizer.state_dict(),
-                'lr_scheduler': self.lr_scheduler.state_dict(),
-                'epoch': epoch
-            }
-            if config.amp:
-                save_files["scaler"] = self.grad_scaler.state_dict()
-
-            checkpoint_path = os.path.join(config.output_dir, "checkpoint",
-                                           f'model_{epoch}.pth')
-            save_on_master(save_files, checkpoint_path)
->>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
 
         driver.event(Event.EPOCH_END, state.epoch)
         # check training state

@@ -52,10 +52,10 @@ CASES = [
     # 'BERT_PADDLE_DEMO_A100_1X8', 
     # 'GLM_TORCH_DEMO_A100_1X8',
     # 'CPM_TORCH_DEMO_A100_1X8'
-    # 'MASK_RCNN_TORCH_DEMO_A100_1X8',
     'MASK_RCNN_TORCH_DEMO_A100_1X4',
-    # 'MASK_RCNN_TORCH_DEMO_A100_1X2',
-    # 'MASK_RCNN_TORCH_DEMO_A100_1X1',
+    'MASK_RCNN_TORCH_DEMO_A100_1X2',
+    'MASK_RCNN_TORCH_DEMO_A100_1X8',
+    'MASK_RCNN_TORCH_DEMO_A100_1X1',
 ]
 # CASES = ['RESNET50_TENSORFLOW2_DEMO_A100_1x8']
 
@@ -215,7 +215,6 @@ GLM_TORCH_DEMO_R300_1X8 = {
     "data_dir_container": "/mnt/data/glm/train/",
 }
 
-<<<<<<< HEAD
 GLM_TORCH_DEMO_R300_2X8 = {
     "model": "glm",
     "framework": "pytorch",
@@ -227,8 +226,6 @@ GLM_TORCH_DEMO_R300_2X8 = {
     "data_dir_container": "/mnt/data/glm/train/",
 }
 
-=======
->>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
 
 MASK_RCNN_TORCH_DEMO_A100_1X8 = {
     "model": "mask_rcnn",
@@ -251,7 +248,6 @@ MASK_RCNN_TORCH_DEMO_A100_1X4 = {
     "data_dir_host": "/raid/dataset/COCO/coco2017",
     "data_dir_container": "/mnt/data/maskrcnn/train/",
 }
-
 
 MASK_RCNN_TORCH_DEMO_A100_1X2 = {
     "model": "mask_rcnn",

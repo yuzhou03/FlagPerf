@@ -16,5 +16,5 @@ seed = 10483
 max_samples_termination = 5553080
 training_event = None
 
-resume: str = "output/checkpoint/model_0.pth"
-start_epoch: int = 0
+# resume: str = "output/checkpoint/model_0.pth"
+# start_epoch: int = 0
