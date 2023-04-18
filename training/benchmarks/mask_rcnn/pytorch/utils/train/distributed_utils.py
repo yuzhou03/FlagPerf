@@ -222,11 +222,7 @@ def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
 def mkdir(path):
     """mkdir"""
     try:
-<<<<<<< HEAD
         os.makedirs(path, exist_ok=True)
-=======
-        os.makedirs(path)
->>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
