@@ -19,9 +19,6 @@ from utils.train import save_on_master
 
 
 class Trainer:
-    """
-    Trainer
-    """
 
     def __init__(self, driver: Driver, adapter, evaluator: Evaluator,
                  training_state: TrainingState, device: Device, config):
@@ -36,7 +33,6 @@ class Trainer:
         self.model = None
         self.evaluator = evaluator
         self.lr_scheduler = None
-        self.global_batch_size = None
 
     def init(self):
         config = self.config
@@ -90,7 +86,6 @@ class Trainer:
                                               print_freq=print_freq,
                                               warmup=warmup,
                                               scaler=scaler)
-        driver.event(Event.EPOCH_END, state.epoch)
 
         # update learning rate
         self.lr_scheduler.step()
@@ -147,8 +142,9 @@ class Trainer:
                                            f'model_{epoch}.pth')
             save_on_master(save_files, checkpoint_path)
 
+        driver.event(Event.EPOCH_END, state.epoch)
+        # check training state
         self.detect_training_status()
-
         return mean_loss, lr
 
     def detect_training_status(self):
