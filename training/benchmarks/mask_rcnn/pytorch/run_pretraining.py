@@ -149,7 +149,7 @@ def main(start_ts) -> Tuple[Any, Any]:
             )
 
         if config.amp and "scaler" in checkpoint:
-            trainer.scaler.load_state_dict(checkpoint["scaler"])
+            trainer.grad_scaler.load_state_dict(checkpoint["scaler"])
         dist_pytorch.main_proc_print(
             f"resume training from checkpoint. checkpoint: {config.resume}, start_epoch:{config.start_epoch}"
         )
