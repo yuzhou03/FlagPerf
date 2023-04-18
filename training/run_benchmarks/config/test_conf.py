@@ -52,10 +52,10 @@ CASES = [
     # 'BERT_PADDLE_DEMO_A100_1X8', 
     # 'GLM_TORCH_DEMO_A100_1X8',
     # 'CPM_TORCH_DEMO_A100_1X8'
-    # 'MASK_RCCN_TORCH_DEMO_A100_1X8',
-    'MASK_RCCN_TORCH_DEMO_A100_1X4',
-    'MASK_RCCN_TORCH_DEMO_A100_1X2',
-    'MASK_RCCN_TORCH_DEMO_A100_1X1',
+    # 'MASK_RCNN_TORCH_DEMO_A100_1X8',
+    'MASK_RCNN_TORCH_DEMO_A100_1X4',
+    # 'MASK_RCNN_TORCH_DEMO_A100_1X2',
+    # 'MASK_RCNN_TORCH_DEMO_A100_1X1',
 ]
 # CASES = ['RESNET50_TENSORFLOW2_DEMO_A100_1x8']
 
@@ -230,7 +230,7 @@ GLM_TORCH_DEMO_R300_2X8 = {
 =======
 >>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
 
-MASK_RCCN_TORCH_DEMO_A100_1X8 = {
+MASK_RCNN_TORCH_DEMO_A100_1X8 = {
     "model": "mask_rcnn",
     "framework": "pytorch",
     "config": "config_A100x1x8",
@@ -241,7 +241,7 @@ MASK_RCCN_TORCH_DEMO_A100_1X8 = {
     "data_dir_container": "/mnt/data/maskrcnn/train/",
 }
 
-MASK_RCCN_TORCH_DEMO_A100_1X4 = {
+MASK_RCNN_TORCH_DEMO_A100_1X4 = {
     "model": "mask_rcnn",
     "framework": "pytorch",
     "config": "config_A100x1x4",
@@ -253,7 +253,7 @@ MASK_RCCN_TORCH_DEMO_A100_1X4 = {
 }
 
 
-MASK_RCCN_TORCH_DEMO_A100_1X2 = {
+MASK_RCNN_TORCH_DEMO_A100_1X2 = {
     "model": "mask_rcnn",
     "framework": "pytorch",
     "config": "config_A100x1x2",
@@ -264,7 +264,7 @@ MASK_RCCN_TORCH_DEMO_A100_1X2 = {
     "data_dir_container": "/mnt/data/maskrcnn/train/",
 }
 
-MASK_RCCN_TORCH_DEMO_A100_1X1 = {
+MASK_RCNN_TORCH_DEMO_A100_1X1 = {
     "model": "mask_rcnn",
     "framework": "pytorch",
     "config": "config_A100x1x1",
