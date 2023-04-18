@@ -215,6 +215,7 @@ GLM_TORCH_DEMO_R300_1X8 = {
     "data_dir_container": "/mnt/data/glm/train/",
 }
 
+<<<<<<< HEAD
 GLM_TORCH_DEMO_R300_2X8 = {
     "model": "glm",
     "framework": "pytorch",
@@ -226,6 +227,8 @@ GLM_TORCH_DEMO_R300_2X8 = {
     "data_dir_container": "/mnt/data/glm/train/",
 }
 
+=======
+>>>>>>> 913d4a1d978ef456b6d5a68ab094e0fe2bdac454
 
 MASK_RCCN_TORCH_DEMO_A100_1X8 = {
     "model": "mask_rcnn",
