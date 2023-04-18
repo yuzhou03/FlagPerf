@@ -22,6 +22,9 @@ class TrainingState:
 
     init_time = 0
     raw_train_time = 0
+    
+    # 训练起始时间戳，用于resume时，累计训练时长
+    train_start_timestamp = 0
 
     def status(self):
         """get status"""

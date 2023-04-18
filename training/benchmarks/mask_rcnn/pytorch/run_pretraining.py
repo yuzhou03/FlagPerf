@@ -24,18 +24,16 @@ from train import trainer_adapter
 from train.evaluator import Evaluator
 from train.trainer import Trainer
 from train.training_state import TrainingState
-
+from utils.train import mkdir
 from utils.train.device import Device
 # 这里需要导入dataset, dataloader的相关方法。 这里尽量保证函数的接口一致，实现可以不同。
 from dataloaders.dataloader import build_train_dataset, \
     build_eval_dataset, build_train_dataloader, build_eval_dataloader
 
-from utils.train import save_on_master, mkdir
-
 logger = None
 
 
-def main() -> Tuple[Any, Any]:
+def main(start_ts) -> Tuple[Any, Any]:
     global logger
     global config
 
@@ -55,7 +53,8 @@ def main() -> Tuple[Any, Any]:
 
     # mkdir if necessary
     if config.output_dir:
-        mkdir(config.output_dir)
+        for sub_dir in ["checkpoint", "result", "plot"]:
+            mkdir(os.path.join(config.output_dir, sub_dir))
 
     dist_pytorch.init_dist_training_env(config)
     dist_pytorch.barrier(config.vendor)
@@ -90,6 +89,7 @@ def main() -> Tuple[Any, Any]:
 
     # 创建TrainingState对象
     training_state = TrainingState()
+    training_state.train_start_timestamp = start_ts
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
     trainer = Trainer(driver=model_driver,
@@ -125,30 +125,34 @@ def main() -> Tuple[Any, Any]:
                                 init_evaluation_start)
     model_driver.event(Event.INIT_EVALUATION, init_evaluation_info)
 
-
     model_without_ddp = trainer.model
     if config.distributed:
         model_without_ddp = trainer.model
-
 
     # 如果传入resume参数，即上次训练的权重地址，则接着上次的参数训练
     if config.resume:
         # If map_location is missing, torch.load will first load the module to CPU
         # and then copy each parameter to where it was saved,
         # which would result in all processes on the same machine using the same set of devices.
-        checkpoint = torch.load(config.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+
+        # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        checkpoint = torch.load(config.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
         trainer.optimizer.load_state_dict(checkpoint['optimizer'])
         trainer.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         config.start_epoch = checkpoint['epoch'] + 1
 
-        dist_pytorch.main_proc_print(f"amp: {config.amp} scaler in checkpoint:{'scaler' in checkpoint}")
+        if "train_start_ts" in checkpoint:
+            training_state.train_start_timestamp = checkpoint["train_start_ts"]
+            dist_pytorch.main_proc_print(
+                f"resume from checkpoint, read train_start_timestamp: {training_state.train_start_timestamp}"
+            )
 
         if config.amp and "scaler" in checkpoint:
             trainer.scaler.load_state_dict(checkpoint["scaler"])
-        dist_pytorch.main_proc_print(f"resume training from checkpoint. checkpoint: {config.resume}, start_epoch:{config.start_epoch}")
-
-
+        dist_pytorch.main_proc_print(
+            f"resume training from checkpoint. checkpoint: {config.resume}, start_epoch:{config.start_epoch}"
+        )
 
     # do evaluation
     if not config.do_train:
@@ -171,14 +175,13 @@ def main() -> Tuple[Any, Any]:
     val_map = []
 
     # 训练过程
-    epoch = -1
+    epoch = config.start_epoch
     while training_state.global_steps < config.max_steps and \
             not training_state.end_training:
 
         if config.distributed:
             train_sampler.set_epoch(epoch)
 
-        epoch += 1
         training_state.epoch = epoch
         trainer.train_one_epoch(train_dataloader,
                                 eval_dataloader,
@@ -191,12 +194,14 @@ def main() -> Tuple[Any, Any]:
                                 print_freq=config.print_freq,
                                 scaler=trainer.grad_scaler)
 
+        epoch += 1
+
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
     raw_train_end_time = logger.previous_log_time  # 训练结束时间，单位为ms
 
     # 训练时长，单位为秒
-    raw_train_time_ms = raw_train_end_time - raw_train_start_time
+    raw_train_time_ms = raw_train_end_time - training_state.train_start_timestamp
     training_state.raw_train_time = raw_train_time_ms / 1e+3
 
     # 绘图
@@ -223,12 +228,12 @@ def plot_train_result(config, train_loss: list, learning_rate: list,
 if __name__ == "__main__":
 
     start = time.time()
-    updated_config, state = main()
+    updated_config, state = main(start)
     if not dist_pytorch.is_main_process():
         sys.exit(0)
 
     # 训练信息写日志
-    e2e_time = time.time() - start
+    e2e_time = time.time() - state.train_start_timestamp
     if updated_config.do_train:
         # 构建训练所需的统计信息，包括不限于：e2e_time、training_samples_per_second、
         # converged、final_accuracy、raw_train_time、init_time
