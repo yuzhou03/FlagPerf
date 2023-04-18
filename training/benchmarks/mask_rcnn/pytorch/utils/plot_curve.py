@@ -3,7 +3,7 @@ import datetime
 import matplotlib.pyplot as plt
 
 
-def plot_loss_and_lr(train_loss, learning_rate, output_dir="output/plot"):
+def plot_loss_and_lr(train_loss, learning_rate, world_size, output_dir="output/plot"):
     """plot loss and lr"""
     try:
         x = list(range(len(train_loss)))
@@ -26,7 +26,7 @@ def plot_loss_and_lr(train_loss, learning_rate, output_dir="output/plot"):
 
         fig.subplots_adjust(right=0.8)  # 防止出现保存图片显示不全的情况
         now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        outfile_path = os.path.join(output_dir, f'./loss_and_lr_{now}.png')
+        outfile_path = os.path.join(output_dir, f'./loss_and_lr_{world_size}_{now}.png')
         fig.savefig(outfile_path)
         plt.close()
         print("successful save loss curve! ")
@@ -34,7 +34,7 @@ def plot_loss_and_lr(train_loss, learning_rate, output_dir="output/plot"):
         print(e)
 
 
-def plot_map(mAP, output_dir="output/plot"):
+def plot_map(mAP, world_size, output_dir="output/plot"):
     """plat mAP"""
     try:
         x = list(range(len(mAP)))
@@ -45,7 +45,7 @@ def plot_map(mAP, output_dir="output/plot"):
         plt.xlim(0, len(mAP))
         plt.legend(loc='best')
         now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        outfile_path = os.path.join(output_dir, f'./mAP_{now}.png')
+        outfile_path = os.path.join(output_dir, f'./mAP_{world_size}_{now}.png')
         plt.savefig(outfile_path)
         plt.close()
         print("successful save mAP curve!")
