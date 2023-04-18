@@ -72,7 +72,7 @@ device: str = None
 n_device: int = 1
 
 # Automatic mixed precision
-amp: bool = False
+amp: bool = True
 
 # aspect ratio group factor
 aspect_ratio_group_factor: int = 3
@@ -97,3 +97,9 @@ num_classes: int = 90
 pretrained_path: str = "checkpoint/resnet50.pth"
 # coco weights pretrained_path
 coco_weights_pretrained_path: str = "checkpoint/maskrcnn_resnet50_fpn_coco.pth"
+
+# resume configs
+# resume start checkpoint
+resume: str = None
+# start epoch
+start_epoch: int = 0
