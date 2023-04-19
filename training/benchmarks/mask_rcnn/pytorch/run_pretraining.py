@@ -207,7 +207,7 @@ def main(start_ts) -> Tuple[Any, Any]:
     training_state.raw_train_time = raw_train_time_ms / 1e+3
 
     # 绘图
-    plot_train_result(config, train_loss, learning_rate, val_map)
+    plot_train_result(config, world_size, train_loss, learning_rate, val_map)
 
     return config, training_state
 
