@@ -4,7 +4,6 @@ import sys
 import torch
 from .transforms import Compose, ToTensor, RandomHorizontalFlip
 
-
 CURR_PATH = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../../")))
 from driver import dist_pytorch
@@ -14,13 +13,11 @@ from .dataset_coco import CocoDetection
 from utils.train import create_aspect_ratio_groups, GroupedBatchSampler
 
 data_transform = {
-    "train":
-    Compose([
+    "train": Compose([
         ToTensor(),
         RandomHorizontalFlip(0.5),
     ]),
-    "val":
-    Compose([ToTensor()])
+    "val": Compose([ToTensor()])
 }
 
 
@@ -46,7 +43,7 @@ def build_train_dataloader(
         train_sampler = torch.utils.data.distributed.DistributedSampler(
             train_dataset)
     else:
-        train_sampler = None
+        train_sampler = torch.utils.data.RandomSampler(train_dataset)
 
     if config.aspect_ratio_group_factor >= 0:
         # 统计所有图像比例在bins区间中的位置索引

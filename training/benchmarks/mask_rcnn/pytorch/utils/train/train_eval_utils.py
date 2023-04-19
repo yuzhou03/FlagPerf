@@ -6,7 +6,6 @@ import torch
 
 import utils.train.distributed_utils as utils
 from .coco_eval import EvalCOCOMetric
-from driver import dist_pytorch
 
 
 def train_one_epoch(model,

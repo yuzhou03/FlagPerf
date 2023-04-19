@@ -53,9 +53,13 @@ def main(start_ts) -> Tuple[Any, Any]:
     dist_pytorch.init_dist_training_env(config)
     dist_pytorch.barrier(config.vendor)
     model_driver.event(Event.INIT_START)
+    # logger
+    logger = model_driver.logger
+    init_start_time = logger.previous_log_time  # init起始时间，单位ms
+
 
     world_size = dist_pytorch.get_world_size()
-    config.distributed = world_size > 1 or config.multiprocessing_distributed
+    config.distributed = world_size > 1 or False
 
 
     # 用来保存coco_info的文件
@@ -66,10 +70,7 @@ def main(start_ts) -> Tuple[Any, Any]:
                                     f"seg_results_{world_size}_{now}.txt")
 
 
-    # logger
-    logger = model_driver.logger
-    init_start_time = logger.previous_log_time  # init起始时间，单位ms
-
+    
     # 得到seed
     """
     这里获取seed的可行方式：
@@ -170,6 +171,7 @@ def main(start_ts) -> Tuple[Any, Any]:
     # TRAIN_START
     dist_pytorch.barrier(config.vendor)
     model_driver.event(Event.TRAIN_START)
+    raw_train_start_time = logger.previous_log_time # 单位ms
 
     # 训练指标
     train_loss = []
@@ -203,7 +205,7 @@ def main(start_ts) -> Tuple[Any, Any]:
     raw_train_end_time = logger.previous_log_time  # 训练结束时间，单位为ms
 
     # 训练时长，单位为秒
-    raw_train_time_ms = raw_train_end_time - training_state.train_start_timestamp
+    raw_train_time_ms = int(raw_train_end_time - raw_train_start_time)
     training_state.raw_train_time = raw_train_time_ms / 1e+3
 
     # 绘图
@@ -239,8 +241,7 @@ if __name__ == "__main__":
     if updated_config.do_train:
         # 构建训练所需的统计信息，包括不限于：e2e_time、training_samples_per_second、
         # converged、final_accuracy、raw_train_time、init_time
-        training_perf = (dist_pytorch.global_batch_size(updated_config) *
-                         state.global_steps) / state.raw_train_time
+        training_perf = state.num_trained_samples / state.raw_train_time
         finished_info = {
             "e2e_time": e2e_time,
             "num_trained_samples": state.num_trained_samples,
@@ -249,6 +250,7 @@ if __name__ == "__main__":
             "final_mAP": state.eval_mAP,
             "raw_train_time": state.raw_train_time,
             "init_time": state.init_time,
+            "global_steps": state.global_steps,
         }
     else:
         finished_info = {"e2e_time": e2e_time}
