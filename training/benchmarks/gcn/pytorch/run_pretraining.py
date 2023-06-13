@@ -40,15 +40,11 @@ def main() -> Tuple[Any, Any]:
     model_driver.event(Event.INIT_START)
 
     config.cuda = not config.no_cuda and torch.cuda.is_available()
-    print(f"config.cuda: {config.cuda}")
-
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
 
     # Load data
-    print(f"load_data path: {config.data_dir}")
-
     adj, features, labels, idx_train, idx_val, idx_test = load_data(
         path=config.data_dir, dataset="cora")
 
