@@ -38,7 +38,7 @@ def load_data(path=".cora/", dataset="cora"):
     features = normalize(features)
     adj = normalize(adj + sp.eye(adj.shape[0]))
 
-    idx_train = range(140)
+    idx_train = range(140) # 140(20 for each class)
     idx_val = range(200, 500)
     idx_test = range(500, 1500)
 

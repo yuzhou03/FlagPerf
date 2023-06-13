@@ -50,7 +50,15 @@ def main() -> Tuple[Any, Any]:
     print(f"load_data path: {config.data_dir}")
 
     adj, features, labels, idx_train, idx_val, idx_test = load_data(
-        path=config.data_dir)
+        path=config.data_dir, dataset="cora")
+
+    if config.cuda:
+        features = features.cuda()
+        labels = labels.cuda()
+        adj = adj.cuda()
+        idx_train = idx_train.cuda()
+        idx_val = idx_val.cuda()
+        idx_test = idx_test.cuda()
 
     seed = config.seed
 
@@ -60,20 +68,18 @@ def main() -> Tuple[Any, Any]:
     training_state = TrainingState()
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
-    evaluator = Evaluator(config, features, labels, adj, idx_test)
+    evaluator = Evaluator(features, labels, adj, idx_test)
 
-    trainer = Trainer(driver=model_driver,
-                      adapter=trainer_adapter,
-                      evaluator=evaluator,
-                      training_state=training_state,
-                      device=config.device,
-                      config=config,
-                      features=features,
-                      labels=labels,
-                      adj=adj,
-                      idx_train=idx_train,
-                      idx_val=idx_val,
-                      idx_test=idx_test)
+    trainer = Trainer(
+        driver=model_driver,
+        adapter=trainer_adapter,
+        evaluator=evaluator,
+        training_state=training_state,
+        device=config.device,
+        config=config,
+        features=features,
+        labels=labels,
+    )
     training_state._trainer = trainer
 
     # 设置分布式环境, trainer init()
@@ -92,12 +98,12 @@ def main() -> Tuple[Any, Any]:
     raw_train_start_time = logger.previous_log_time  # 训练起始时间，单位为ms
 
     # 训练过程
-    while not training_state.end_training and training_state.epoch <= config.max_epochs:
-        trainer.train_one_epoch()
+    while not training_state.end_training:
+        trainer.train_one_epoch(features, labels, adj, idx_train, idx_val)
 
     dist_pytorch.main_proc_print(f"Optimization Finished!")
 
-    training_state.eval_acc, training_state.eval_loss = trainer.evaluator.evaluate(
+    training_state.test_acc, training_state.test_loss = trainer.evaluator.evaluate(
         trainer)
 
     # TRAIN_END事件
@@ -129,9 +135,10 @@ if __name__ == "__main__":
             "converged": state.converged,
             "final_eval_acc": state.eval_acc,
             "final_eval_loss": state.eval_loss,
+            "final_test_acc": state.test_acc,
+            "final_test_loss": state.test_loss,
             "raw_train_time": state.raw_train_time,
             "init_time": state.init_time,
             "num_trained_samples": state.num_trained_samples,
         }
-        print(f"finished_info:{finished_info}")
     logger.log(Event.FINISHED, message=finished_info, stacklevel=0)

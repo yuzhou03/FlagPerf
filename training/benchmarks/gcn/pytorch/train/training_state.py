@@ -17,6 +17,9 @@ class TrainingState:
     eval_loss: float = 0.0
     eval_acc: float = 0.0
 
+    test_loss: float = 0.0
+    test_acc: float = 0.0
+
     epoch: int = 0
     num_trained_samples = 0
     end_training: bool = False

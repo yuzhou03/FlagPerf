@@ -4,8 +4,7 @@ from utils.utils import accuracy
 
 class Evaluator:
 
-    def __init__(self, args, features, labels, adj, idx_test):
-        self.args = args
+    def __init__(self, features, labels, adj, idx_test):
         self.features = features
         self.labels = labels
         self.adj = adj
@@ -18,10 +17,6 @@ class Evaluator:
         model = trainer.model
         model.eval()
         output = model(self.features, self.adj)
-
-        if self.args.cuda:
-            labels = labels.cuda()
-            idx_test = idx_test.cuda()
 
         loss_test = F.nll_loss(output[idx_test], labels[idx_test])
         acc_test = accuracy(output[idx_test], labels[idx_test])

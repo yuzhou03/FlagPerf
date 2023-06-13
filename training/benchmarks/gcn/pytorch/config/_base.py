@@ -10,8 +10,8 @@ seed: int = 42
 do_train = True
 fp16 = False
 dist_backend: str = None
-train_batch_size: int = 256
-eval_batch_size: int = 256
+train_batch_size: int = None
+eval_batch_size: int = None
 
 # required params
 
@@ -24,7 +24,7 @@ gradient_accumulation_steps:int = 1
 
 
 # Validate during training pass.
-fastmode: bool = False
+fastmode: bool = True
 
 # Number of hidden units.
 hidden: int = 16
@@ -38,7 +38,7 @@ lr: float = 0.01
 weight_decay: float = 5e-4
 
 # Number of epochs to train.
-max_epochs: int = 200
+max_epochs: int = 400
 
 # Disables CUDA training.
 no_cuda: bool = False

@@ -2,19 +2,11 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
 
-import os
-import sys
-import torch
-
-import torch.distributed as dist
-from torch.optim import Optimizer
-from torch import nn, Tensor
+from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
-import config
 
-CURR_PATH = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../../")))
-from driver.dist_pytorch import main_proc_print
+import config
+from driver.dist_pytorch import main_proc_print, is_dist_avail_and_initialized
 
 
 def convert_model(model: nn.Module) -> nn.Module:
@@ -30,12 +22,6 @@ def model_to_fp16(model: nn.Module) -> nn.Module:
 
 
 def model_to_ddp(model: nn.Module) -> nn.Module:
-    if dist.is_available() and dist.is_initialized():
+    if is_dist_avail_and_initialized():
         model = DDP(model, device_ids=[config.local_rank])
     return model
-
-
-def create_grad_scaler():
-    scaler = torch.cuda.amp.GradScaler() if config.amp else None
-    return scaler
-
