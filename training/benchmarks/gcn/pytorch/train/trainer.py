@@ -14,6 +14,7 @@ from train.training_state import TrainingState
 from utils.utils import accuracy
 from driver import Driver, dist_pytorch
 
+
 class Trainer:
 
     def __init__(self, driver: Driver, adapter, evaluator: Evaluator,
@@ -41,7 +42,7 @@ class Trainer:
 
         self.optimizer = create_optimizer(self.model, self.config)
 
-    def train_one_epoch(self, features, labels, adj, idx_train, idx_val):
+    def train_one_epoch(self, train_dataloader, adj, idx_train, idx_val):
 
         t = time.time()
         config = self.config
@@ -50,26 +51,40 @@ class Trainer:
 
         model.train()
         self.optimizer.zero_grad()
-        
-        output = model(features, adj)
 
-        loss_train = F.nll_loss(output[idx_train], labels[idx_train])
-        acc_train = accuracy(output[idx_train], labels[idx_train])
+        for features, labels in train_dataloader:
+            state.global_steps += 1
+            state.num_trained_samples = state.global_steps * \
+                dist_pytorch.global_batch_size(self.config)
 
-        loss_train.backward()
-        self.optimizer.step()
+            print(f"features shape: {features.shape} labels shape: {labels.shape} adj shape:{adj.shape} new shape: {adj[:features.shape[1]][:features.shape[1]].shape}")
 
-        if not config.fastmode:
-            # Evaluate validation set performance separately,
-            # deactivates dropout during validation run.
-            model.eval()
-            output = model(features, adj)
+            print(features)
+            print(labels)
 
-        loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-        acc_val = accuracy(output[idx_val], labels[idx_val])
+            if config.cuda:
+                features = features.cuda()
+                labels = labels.cuda()
+                adj = adj.cuda()
 
-        state.eval_acc = acc_val.item()
-        state.eval_loss = loss_val.item()
+
+            output = model(features, adj[:features.shape[1]][:features.shape[1]])
+
+            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+            acc_train = accuracy(output[idx_train], labels[idx_train])
+
+            loss_train.backward()
+            self.optimizer.step()
+                # Evaluate validation set performance separately,
+                # deactivates dropout during validation run.
+                model.eval()
+                output = model(features, adj)
+
+            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+            acc_val = accuracy(output[idx_val], labels[idx_val])
+
+            state.eval_acc = acc_val.item()
+            state.eval_loss = loss_val.item()
 
         state.epoch += 1
         print('Epoch: {:04d}'.format(state.epoch),

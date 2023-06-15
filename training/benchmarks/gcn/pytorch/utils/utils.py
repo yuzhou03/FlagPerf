@@ -53,6 +53,10 @@ def load_data(path=".cora/", dataset="cora"):
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
 
+    print(
+        f"features size: {features.shape}  labels size: {labels.shape} adj size: {adj.shape}"
+    )
+
     return adj, features, labels, idx_train, idx_val, idx_test
 
 
@@ -80,4 +84,4 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
         np.vstack((sparse_mx.row, sparse_mx.col)).astype(np.int64))
     values = torch.from_numpy(sparse_mx.data)
     shape = torch.Size(sparse_mx.shape)
-    return torch.sparse.FloatTensor(indices, values, shape)
+    return torch.sparse.FloatTensor(indices, values, shape).to_dense()

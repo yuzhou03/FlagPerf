@@ -22,7 +22,8 @@ from train import trainer_adapter
 from train.evaluator import Evaluator
 from train.trainer import Trainer
 from train.training_state import TrainingState
-from utils.utils import load_data
+from dataloaders.dataloaders import build_train_dataset, build_train_dataloader,\
+                                    build_eval_dataset, build_eval_dataloader, gpu_load_data
 
 logger = None
 
@@ -40,23 +41,23 @@ def main() -> Tuple[Any, Any]:
     model_driver.event(Event.INIT_START)
 
     config.cuda = not config.no_cuda and torch.cuda.is_available()
+
+    world_size = dist_pytorch.get_world_size()
+    config.distributed = world_size > 1 or config.multiprocessing_distributed
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
 
     # Load data
-    adj, features, labels, idx_train, idx_val, idx_test = load_data(
-        path=config.data_dir, dataset=config.dataset)
+    # adj, features, labels, idx_train, idx_val, idx_test = load_data(
+    #     path=config.data_dir, dataset=config.dataset)
+    adj, features, labels, idx_train, idx_val, idx_test = gpu_load_data(config)
 
-  
+    train_dataset = build_train_dataset(config)
+    train_dataloader = build_train_dataloader(config, train_dataset)
 
-    if config.cuda:
-        features = features.cuda()
-        labels = labels.cuda()
-        adj = adj.cuda()
-        idx_train = idx_train.cuda()
-        idx_val = idx_val.cuda()
-        idx_test = idx_test.cuda()
+    val_dataset, idx_val = build_eval_dataset(config)
+    val_dataloader = build_eval_dataloader(config, val_dataset)
 
     seed = config.seed
 
@@ -66,7 +67,7 @@ def main() -> Tuple[Any, Any]:
     training_state = TrainingState()
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
-    evaluator = Evaluator(features, labels, adj, idx_test)
+    evaluator = Evaluator(val_dataloader, adj, features, labels, idx_test)
 
     trainer = Trainer(
         driver=model_driver,
@@ -97,7 +98,7 @@ def main() -> Tuple[Any, Any]:
 
     # 训练过程
     while not training_state.end_training:
-        trainer.train_one_epoch(features, labels, adj, idx_train, idx_val)
+        trainer.train_one_epoch(train_dataloader, adj, idx_train, idx_val)
 
     dist_pytorch.main_proc_print(f"Optimization Finished!")
 

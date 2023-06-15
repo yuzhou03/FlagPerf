@@ -21,12 +21,13 @@ local_rank: int = 0
 # frequency of logging loss. If not positive, no logging is provided for training loss
 log_freq: int = 10
 
-gradient_accumulation_steps:int = 1
-
+gradient_accumulation_steps: int = 1
 
 # dataset params
 # dataset is one of ['cora', 'citeseer', 'pubmed']
 dataset = "cora"
+# number of workers
+num_workers = 4
 
 # Validate during training pass.
 fastmode: bool = True
@@ -53,3 +54,4 @@ target_acc: float = 0.815
 
 cuda: bool = None
 
+distributed : bool = None

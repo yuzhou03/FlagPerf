@@ -4,19 +4,22 @@ from utils.utils import accuracy
 
 class Evaluator:
 
-    def __init__(self, features, labels, adj, idx_test):
-        self.features = features
-        self.labels = labels
+    def __init__(self, val_dataloader, adj, features, lables, idx_test):
+        self.val_dataloder = val_dataloader
         self.adj = adj
         self.idx_test = idx_test
+        self.features = features 
+        self.labels = lables
 
     def evaluate(self, trainer):
+        features = self.features
         labels = self.labels
+
         idx_test = self.idx_test
 
         model = trainer.model
         model.eval()
-        output = model(self.features, self.adj)
+        output = model(features, self.adj)
 
         loss_test = F.nll_loss(output[idx_test], labels[idx_test])
         acc_test = accuracy(output[idx_test], labels[idx_test])
