@@ -46,7 +46,9 @@ def main() -> Tuple[Any, Any]:
 
     # Load data
     adj, features, labels, idx_train, idx_val, idx_test = load_data(
-        path=config.data_dir, dataset="cora")
+        path=config.data_dir, dataset=config.dataset)
+
+  
 
     if config.cuda:
         features = features.cuda()

@@ -5,8 +5,10 @@ import torch
 
 def encode_onehot(labels):
     classes = set(labels)
-    classes_dict = {c: np.identity(len(classes))[i, :] for i, c in
-                    enumerate(classes)}
+    classes_dict = {
+        c: np.identity(len(classes))[i, :]
+        for i, c in enumerate(classes)
+    }
     labels_onehot = np.array(list(map(classes_dict.get, labels)),
                              dtype=np.int32)
     return labels_onehot
@@ -28,6 +30,7 @@ def load_data(path=".cora/", dataset="cora"):
                                     dtype=np.int32)
     edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),
                      dtype=np.int32).reshape(edges_unordered.shape)
+
     adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
                         shape=(labels.shape[0], labels.shape[0]),
                         dtype=np.float32)
@@ -38,7 +41,7 @@ def load_data(path=".cora/", dataset="cora"):
     features = normalize(features)
     adj = normalize(adj + sp.eye(adj.shape[0]))
 
-    idx_train = range(140) # 140(20 for each class)
+    idx_train = range(140)  # 140(20 for each class)
     idx_val = range(200, 500)
     idx_test = range(500, 1500)
 

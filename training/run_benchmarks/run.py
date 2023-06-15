@@ -626,7 +626,7 @@ def main():
             wait_for_finish(dp_path, container_name, pid_file_path, nnodes)
             RUN_LOGGER.info("3) Training tasks end in the cluster...")
             RUN_LOGGER.info("4) Clean container environments in cluster...")
-            clean_containers_env_cluster(dp_path, container_name, nnodes)
+            # clean_containers_env_cluster(dp_path, container_name, nnodes)
             RUN_LOGGER.info("-== Testcase " + case + " Round " + str(count) +
                             " finished ==-")
         RUN_LOGGER.info("=== 2.3 Setup container and run testcases finished."

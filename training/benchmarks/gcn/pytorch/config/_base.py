@@ -3,7 +3,8 @@ vendor: str = None
 """model params"""
 name: str = "gcn"
 
-data_dir = "/raid/dataset/gcn/cora/"
+data_dir = "/raid/dataset/gcn/data/cora/"
+
 # random seed
 seed: int = 42
 
@@ -22,6 +23,10 @@ log_freq: int = 10
 
 gradient_accumulation_steps:int = 1
 
+
+# dataset params
+# dataset is one of ['cora', 'citeseer', 'pubmed']
+dataset = "cora"
 
 # Validate during training pass.
 fastmode: bool = True
@@ -47,3 +52,4 @@ no_cuda: bool = False
 target_acc: float = 0.815
 
 cuda: bool = None
+
