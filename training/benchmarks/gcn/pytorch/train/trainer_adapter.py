@@ -22,6 +22,6 @@ def model_to_fp16(model: nn.Module) -> nn.Module:
 
 
 def model_to_ddp(model: nn.Module) -> nn.Module:
-    if is_dist_avail_and_initialized():
-        model = DDP(model, device_ids=[config.local_rank])
+    # if is_dist_avail_and_initialized():
+    #     model = DDP(model, device_ids=[config.local_rank])
     return model
