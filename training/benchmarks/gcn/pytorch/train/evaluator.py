@@ -14,7 +14,6 @@ class Evaluator:
     def evaluate(self, trainer):
         features = self.features
         labels = self.labels
-
         idx_test = self.idx_test
 
         model = trainer.model

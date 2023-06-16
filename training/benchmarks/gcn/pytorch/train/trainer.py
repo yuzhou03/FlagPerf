@@ -34,6 +34,7 @@ class Trainer:
     def init(self):
         dist_pytorch.main_proc_print("Init process")
         self.model = create_model(self.config, self.features, self.labels)
+        print(f"model: {self.model}")
         self.model.to(self.config.device)
 
         self.model = self.adapter.convert_model(self.model)
@@ -54,27 +55,25 @@ class Trainer:
 
         for features, labels in train_dataloader:
             state.global_steps += 1
-            state.num_trained_samples = state.global_steps * \
-                dist_pytorch.global_batch_size(self.config)
 
-            print(f"features shape: {features.shape} labels shape: {labels.shape} adj shape:{adj.shape} new shape: {adj[:features.shape[1]][:features.shape[1]].shape}")
-
-            print(features)
-            print(labels)
+            print(f"state.num_trained_samples:{state.num_trained_samples} \
+                    features shape: {features.shape} labels shape: {labels.shape} \
+                    adj shape:{adj.shape} new_shape: {(adj[:features.shape[0],:features.shape[1]]).shape}")
 
             if config.cuda:
                 features = features.cuda()
                 labels = labels.cuda()
                 adj = adj.cuda()
 
-
-            output = model(features, adj[:features.shape[1]][:features.shape[1]])
+            output = model(features, adj[:, :features.shape[0]])
 
             loss_train = F.nll_loss(output[idx_train], labels[idx_train])
             acc_train = accuracy(output[idx_train], labels[idx_train])
 
             loss_train.backward()
             self.optimizer.step()
+            
+            if not config.fastmode:
                 # Evaluate validation set performance separately,
                 # deactivates dropout during validation run.
                 model.eval()
@@ -87,6 +86,7 @@ class Trainer:
             state.eval_loss = loss_val.item()
 
         state.epoch += 1
+        state.num_trained_samples += len(train_dataloader.dataset)
         print('Epoch: {:04d}'.format(state.epoch),
               'loss_train: {:.4f}'.format(loss_train.item()),
               'acc_train: {:.4f}'.format(acc_train.item()),
