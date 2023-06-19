@@ -61,11 +61,6 @@ class Trainer:
             train_dataloader.sampler.set_epoch(state.epoch)
 
         for batch_idx, batch in enumerate(train_dataloader):
-            # print(
-            #     f"global_steps:{state.global_steps} features shape: {features.shape} labels shape: {labels.shape} \
-            #         adj shape:{adj.shape} new_shape: {(adj[:features.shape[0],:features.shape[0]]).shape}"
-            # )
-
             features, labels = batch
             if config.cuda:
                 features = features.cuda()
@@ -77,29 +72,6 @@ class Trainer:
             self.train_one_step(batch, adj)
 
             state.global_steps += 1
-
-            # eval_result = None
-
-            # if self.can_do_eval(state):
-            #     eval_start = time.time()
-            #     state.eval_loss, state.eval_acc = self.evaluator.evaluate(self)
-            #     eval_end = time.time()
-            #     eval_result = dict(global_steps=state.global_steps,
-            #                        eval_loss=state.eval_loss,
-            #                        eval_acc=state.eval_acc,
-            #                        time=eval_end - eval_start)
-
-            # if eval_result is not None:
-            #     driver.event(Event.EVALUATE, eval_result)
-
-            # driver.event(Event.STEP_END,
-            #              step=state.global_steps,
-            #              loss=state.eval_loss)
-
-            # end_training = self.detect_training_status(state)
-            # if end_training:
-            #     break
-
         if not config.fastmode:
             # Evaluate validation set performance separately,
             # deactivates dropout during validation run.
@@ -108,7 +80,6 @@ class Trainer:
                 self.features[idx_val, :], adj[min(idx_val):max(idx_val) + 1,
                                                min(idx_val):max(idx_val) + 1])
 
-        # print(f"eval output_shape: {output.shape}")
         loss_val = self.criterion(output, self.labels[idx_val])
         acc_val = accuracy(output, self.labels[idx_val])
 
@@ -173,9 +144,6 @@ class Trainer:
 
     def forward(self, batch, adj):
         features, labels = batch
-        if features.shape[0] == 0:
-            return None, None, None
-
         if self.config.cuda:
             labels = labels.cuda()
 
