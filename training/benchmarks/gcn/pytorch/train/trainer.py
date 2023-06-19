@@ -70,8 +70,8 @@ class Trainer:
 
             driver.event(Event.STEP_BEGIN, step=state.global_steps)
             self.train_one_step(batch, adj)
-
             state.global_steps += 1
+
         if not config.fastmode:
             # Evaluate validation set performance separately,
             # deactivates dropout during validation run.
@@ -92,7 +92,7 @@ class Trainer:
             state.train_loss), 'acc_train: {:.4f}'.format(state.train_acc),
               'loss_val: {:.4f}'.format(state.eval_loss),
               'acc_val: {:.4f}'.format(state.eval_acc),
-              f'num_trained_samples: {state.num_trained_samples}',
+              'num_trained_samples: {:.4f}'.format(state.num_trained_samples),
               'time: {:.4f}s'.format(time.time() - t))
 
     def detect_training_status(self, state):
@@ -114,14 +114,10 @@ class Trainer:
         state = self.training_state
         self.model.train()
 
-        if len(batch) == 0:
-            return
-
         _, state.train_loss, state.train_acc = self.forward(batch, adj)
         self.adapter.backward(state.train_loss, self.optimizer)
 
         if dist_pytorch.is_dist_avail_and_initialized():
-
             if state.train_loss is None or state.train_acc is None:
                 total = torch.tensor([0, 0],
                                      dtype=torch.float32,
@@ -134,6 +130,7 @@ class Trainer:
             dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
             total = total / dist.get_world_size()
             state.train_loss, state.train_acc = total.tolist()
+        
         self.driver.event(Event.BACKWARD, state.global_steps, state.train_loss,
                           state.train_acc)
 
@@ -160,12 +157,6 @@ class Trainer:
         loss = self.criterion(output, labels)
         acc = accuracy(output, labels)
         return output, loss, acc
-
-    def inference(self, batch, adj):
-        """inference for valset"""
-        self.model.eval()
-        output, _, _ = self.forward(batch, adj)
-        return output
 
     def can_do_eval(self, state):
         config = self.config

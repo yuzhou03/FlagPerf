@@ -88,7 +88,7 @@ def main() -> Tuple[Any, Any]:
     dist_pytorch.barrier(config.vendor)
 
     model_driver.event(Event.INIT_END)
-    init_end_time = logger.previous_log_time  # init结束时间，单位为ms
+    init_end_time = logger.previous_log_time
     training_state.init_time = (init_end_time -
                                 init_start_time) / 1e+3  # 初始化时长，单位为秒
 
