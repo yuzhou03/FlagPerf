@@ -49,8 +49,6 @@ def main() -> Tuple[Any, Any]:
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
 
     # Load data
-    # adj, features, labels, idx_train, idx_val, idx_test = load_data(
-    #     path=config.data_dir, dataset=config.dataset)
     adj, features, labels, idx_train, idx_val, idx_test = gpu_load_data(config)
 
     train_dataset = build_train_dataset(config)
