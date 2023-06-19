@@ -96,7 +96,7 @@ def main() -> Tuple[Any, Any]:
 
     # 训练过程
     while training_state.epoch < config.max_epochs and not training_state.end_training:
-        trainer.train_one_epoch(train_dataloader, adj, idx_train, idx_val)
+        trainer.train_one_epoch(train_dataloader, adj, idx_val)
         training_state.epoch += 1
 
     dist_pytorch.main_proc_print(f"Optimization Finished!")

@@ -46,7 +46,7 @@ class Trainer:
         self.criterion = F.nll_loss
         self.optimizer = create_optimizer(self.model, self.config)
 
-    def train_one_epoch(self, train_dataloader, adj, idx_train, idx_val):
+    def train_one_epoch(self, train_dataloader, adj, idx_val):
 
         t = time.time()
         driver = self.driver
@@ -62,6 +62,7 @@ class Trainer:
 
         for batch_idx, batch in enumerate(train_dataloader):
             features, labels = batch
+            print(f"batch_idx: {batch_idx} features.shape: {features.shape}")
             if config.cuda:
                 features = features.cuda()
                 labels = labels.cuda()
@@ -77,8 +78,8 @@ class Trainer:
             # deactivates dropout during validation run.
             model.eval()
             output = model(
-                self.features[idx_val, :], adj[min(idx_val):max(idx_val) + 1,
-                                               min(idx_val):max(idx_val) + 1])
+                self.features[idx_val], adj[min(idx_val):max(idx_val) + 1,
+                                            min(idx_val):max(idx_val) + 1])
 
         loss_val = self.criterion(output, self.labels[idx_val])
         acc_val = accuracy(output, self.labels[idx_val])
@@ -130,7 +131,7 @@ class Trainer:
             dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
             total = total / dist.get_world_size()
             state.train_loss, state.train_acc = total.tolist()
-        
+
         self.driver.event(Event.BACKWARD, state.global_steps, state.train_loss,
                           state.train_acc)
 
