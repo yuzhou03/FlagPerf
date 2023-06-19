@@ -30,6 +30,8 @@ def model_to_ddp(model: nn.Module) -> nn.Module:
 
 
 def backward(loss: torch.Tensor, optimizer: Optimizer):
+    if not loss or not optimizer:
+        return
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()

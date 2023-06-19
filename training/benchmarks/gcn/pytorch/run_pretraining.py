@@ -141,5 +141,6 @@ if __name__ == "__main__":
             "raw_train_time": state.raw_train_time,
             "init_time": state.init_time,
             "num_trained_samples": state.num_trained_samples,
+            "global_steps": state.global_steps,
         }
     logger.log(Event.FINISHED, message=finished_info, stacklevel=0)

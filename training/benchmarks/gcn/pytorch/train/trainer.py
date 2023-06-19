@@ -3,6 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License")
 
 import time
+import math
 
 import torch
 import torch.distributed as dist
@@ -75,64 +76,46 @@ class Trainer:
             driver.event(Event.STEP_BEGIN, step=state.global_steps)
             self.train_one_step(batch, adj)
 
-            # index_start = len(features) * state.global_steps
-            # index_end = len(features) * (state.global_steps + 1)
-
-            # output = model(features, adj[index_start:index_end,
-            #                              index_start:index_end])
-
-            # print("output.shape", output.shape)
-            # print(features.shape)
-            # print(features)
-            # print(labels)
-            # loss_train = F.nll_loss(output, labels)
-            # acc_train = accuracy(output, labels)
-
             state.global_steps += 1
 
-            eval_result = None
-            if self.can_do_eval(state):
-                eval_start = time.time()
-                state.eval_loss, state.eval_acc = self.evaluator.evaluate(self)
-                eval_end = time.time()
-                eval_result = dict(global_steps=state.global_steps,
-                                   eval_loss=state.eval_loss,
-                                   eval_acc=state.eval_acc,
-                                   time=eval_end - eval_start)
+            # eval_result = None
 
-            if eval_result is not None:
-                driver.event(Event.EVALUATE, eval_result)
+            # if self.can_do_eval(state):
+            #     eval_start = time.time()
+            #     state.eval_loss, state.eval_acc = self.evaluator.evaluate(self)
+            #     eval_end = time.time()
+            #     eval_result = dict(global_steps=state.global_steps,
+            #                        eval_loss=state.eval_loss,
+            #                        eval_acc=state.eval_acc,
+            #                        time=eval_end - eval_start)
 
-            driver.event(Event.STEP_END,
-                         step=state.global_steps,
-                         loss=state.eval_loss)
+            # if eval_result is not None:
+            #     driver.event(Event.EVALUATE, eval_result)
 
-            end_training = self.detect_training_status(state)
-            if end_training:
-                break
+            # driver.event(Event.STEP_END,
+            #              step=state.global_steps,
+            #              loss=state.eval_loss)
+
+            # end_training = self.detect_training_status(state)
+            # if end_training:
+            #     break
 
         if not config.fastmode:
             # Evaluate validation set performance separately,
             # deactivates dropout during validation run.
-            # model.eval()
-            # print(
-            #     f"self.features[idx_val, idx_val] shape: {self.features[idx_val, idx_val].shape} \
-            #         adj[idx_val, idx_val] shape:{ adj[idx_val, idx_val].shape}"
-            # )
-
-            # output = model(self.features, adj)
-
+            model.eval()
             output = model(
                 self.features[idx_val, :], adj[min(idx_val):max(idx_val) + 1,
                                                min(idx_val):max(idx_val) + 1])
 
-        print(f"eval output_shape: {output.shape}")
+        # print(f"eval output_shape: {output.shape}")
         loss_val = self.criterion(output, self.labels[idx_val])
         acc_val = accuracy(output, self.labels[idx_val])
 
         state.eval_acc = acc_val.item()
         state.eval_loss = loss_val.item()
 
+        self.detect_training_status(state)
         state.num_trained_samples += len(train_dataloader.dataset)
         print('Epoch: {:04d}'.format(state.epoch), 'loss_train: {:.4f}'.format(
             state.train_loss), 'acc_train: {:.4f}'.format(state.train_acc),
@@ -160,13 +143,23 @@ class Trainer:
         state = self.training_state
         self.model.train()
 
+        if len(batch) == 0:
+            return
+
         _, state.train_loss, state.train_acc = self.forward(batch, adj)
         self.adapter.backward(state.train_loss, self.optimizer)
 
         if dist_pytorch.is_dist_avail_and_initialized():
-            total = torch.tensor([state.train_loss, state.train_acc],
-                                 dtype=torch.float32,
-                                 device=self.config.device)
+
+            if state.train_loss is None or state.train_acc is None:
+                total = torch.tensor([0, 0],
+                                     dtype=torch.float32,
+                                     device=self.config.device)
+
+            else:
+                total = torch.tensor([state.train_loss, state.train_acc],
+                                     dtype=torch.float32,
+                                     device=self.config.device)
             dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
             total = total / dist.get_world_size()
             state.train_loss, state.train_acc = total.tolist()
@@ -180,12 +173,18 @@ class Trainer:
 
     def forward(self, batch, adj):
         features, labels = batch
+        if features.shape[0] == 0:
+            return None, None, None
+
         if self.config.cuda:
             labels = labels.cuda()
 
         state = self.training_state
         index_start = len(features) * state.global_steps
         index_end = len(features) * (state.global_steps + 1)
+
+        if index_start >= adj.shape[0]:
+            return None, None, None
 
         output = self.model(features, adj[index_start:index_end,
                                           index_start:index_end])
@@ -203,6 +202,13 @@ class Trainer:
     def can_do_eval(self, state):
         config = self.config
         do_eval = all([
-            state.global_steps >= 1,
+            config.eval_data is not None,
+            state.num_trained_samples >= config.eval_iter_start_samples,
+            state.global_steps %
+            math.ceil(config.eval_interval_samples /
+                      dist_pytorch.global_batch_size(config)) == 0,
+            config.eval_interval_samples > 0,
+            state.global_steps > 1,
         ])
+
         return do_eval or state.num_trained_samples >= config.max_samples_termination
