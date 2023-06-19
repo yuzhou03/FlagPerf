@@ -41,9 +41,9 @@ def main() -> Tuple[Any, Any]:
     model_driver.event(Event.INIT_START)
 
     config.cuda = not config.no_cuda and torch.cuda.is_available()
-
     world_size = dist_pytorch.get_world_size()
     config.distributed = world_size > 1
+    
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
@@ -67,8 +67,7 @@ def main() -> Tuple[Any, Any]:
     training_state = TrainingState()
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
-    evaluator = Evaluator(config, val_dataloader, adj, features, labels,
-                          idx_test)
+    evaluator = Evaluator(config, adj, features, labels, idx_test)
 
     trainer = Trainer(
         driver=model_driver,

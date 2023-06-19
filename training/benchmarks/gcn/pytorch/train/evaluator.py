@@ -4,13 +4,12 @@ from utils.utils import accuracy
 
 class Evaluator:
 
-    def __init__(self, args, val_dataloader, adj, features, lables, idx_test):
+    def __init__(self, args, adj, features, labels, idx_test):
         self.args = args
-        self.val_dataloder = val_dataloader
         self.adj = adj
         self.idx_test = idx_test
-        self.features = features 
-        self.labels = lables
+        self.features = features
+        self.labels = labels
 
     def evaluate(self, trainer):
         features = self.features
