@@ -43,7 +43,7 @@ def main() -> Tuple[Any, Any]:
     config.cuda = not config.no_cuda and torch.cuda.is_available()
 
     world_size = dist_pytorch.get_world_size()
-    config.distributed = world_size > 1 or config.multiprocessing_distributed
+    config.distributed = world_size > 1
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
@@ -67,7 +67,8 @@ def main() -> Tuple[Any, Any]:
     training_state = TrainingState()
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
-    evaluator = Evaluator(val_dataloader, adj, features, labels, idx_test)
+    evaluator = Evaluator(config, val_dataloader, adj, features, labels,
+                          idx_test)
 
     trainer = Trainer(
         driver=model_driver,
@@ -97,8 +98,9 @@ def main() -> Tuple[Any, Any]:
     raw_train_start_time = logger.previous_log_time  # 训练起始时间，单位为ms
 
     # 训练过程
-    while not training_state.end_training:
+    while training_state.epoch < config.max_epochs and not training_state.end_training:
         trainer.train_one_epoch(train_dataloader, adj, idx_train, idx_val)
+        training_state.epoch += 1
 
     dist_pytorch.main_proc_print(f"Optimization Finished!")
 

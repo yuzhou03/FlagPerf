@@ -27,10 +27,10 @@ gradient_accumulation_steps: int = 1
 # dataset is one of ['cora', 'citeseer', 'pubmed']
 dataset = "cora"
 # number of workers
-num_workers = 4
+num_workers = 1
 
 # Validate during training pass.
-fastmode: bool = True
+fastmode: bool = False
 
 # Number of hidden units.
 hidden: int = 16
@@ -44,7 +44,7 @@ lr: float = 0.01
 weight_decay: float = 5e-4
 
 # Number of epochs to train.
-max_epochs: int = 400
+max_epochs: int = 200
 
 # Disables CUDA training.
 no_cuda: bool = False
@@ -54,4 +54,6 @@ target_acc: float = 0.815
 
 cuda: bool = None
 
-distributed : bool = None
+distributed: bool = None
+
+max_samples_termination = 2708*200

@@ -4,6 +4,8 @@
 
 import time
 
+import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 from torch.types import Device
 
@@ -12,7 +14,7 @@ from optimizers import create_optimizer
 from train.evaluator import Evaluator
 from train.training_state import TrainingState
 from utils.utils import accuracy
-from driver import Driver, dist_pytorch
+from driver import Driver, Event, dist_pytorch
 
 
 class Trainer:
@@ -34,18 +36,19 @@ class Trainer:
     def init(self):
         dist_pytorch.main_proc_print("Init process")
         self.model = create_model(self.config, self.features, self.labels)
-        print(f"model: {self.model}")
         self.model.to(self.config.device)
 
         self.model = self.adapter.convert_model(self.model)
         self.model = self.adapter.model_to_fp16(self.model)
         self.model = self.adapter.model_to_ddp(self.model)
 
+        self.criterion = F.nll_loss
         self.optimizer = create_optimizer(self.model, self.config)
 
     def train_one_epoch(self, train_dataloader, adj, idx_train, idx_val):
 
         t = time.time()
+        driver = self.driver
         config = self.config
         model = self.model
         state = self.training_state
@@ -53,48 +56,90 @@ class Trainer:
         model.train()
         self.optimizer.zero_grad()
 
-        for features, labels in train_dataloader:
-            state.global_steps += 1
+        if dist_pytorch.is_dist_avail_and_initialized():
+            train_dataloader.sampler.set_epoch(state.epoch)
 
-            print(f"state.num_trained_samples:{state.num_trained_samples} \
-                    features shape: {features.shape} labels shape: {labels.shape} \
-                    adj shape:{adj.shape} new_shape: {(adj[:features.shape[0],:features.shape[1]]).shape}")
+        for batch_idx, batch in enumerate(train_dataloader):
+            # print(
+            #     f"global_steps:{state.global_steps} features shape: {features.shape} labels shape: {labels.shape} \
+            #         adj shape:{adj.shape} new_shape: {(adj[:features.shape[0],:features.shape[0]]).shape}"
+            # )
 
+            features, labels = batch
             if config.cuda:
                 features = features.cuda()
                 labels = labels.cuda()
                 adj = adj.cuda()
+                self.labels = self.labels.cuda()
 
-            output = model(features, adj[:, :features.shape[0]])
+            driver.event(Event.STEP_BEGIN, step=state.global_steps)
+            self.train_one_step(batch, adj)
 
-            loss_train = F.nll_loss(output[idx_train], labels[idx_train])
-            acc_train = accuracy(output[idx_train], labels[idx_train])
+            # index_start = len(features) * state.global_steps
+            # index_end = len(features) * (state.global_steps + 1)
 
-            loss_train.backward()
-            self.optimizer.step()
-            
-            if not config.fastmode:
-                # Evaluate validation set performance separately,
-                # deactivates dropout during validation run.
-                model.eval()
-                output = model(features, adj)
+            # output = model(features, adj[index_start:index_end,
+            #                              index_start:index_end])
 
-            loss_val = F.nll_loss(output[idx_val], labels[idx_val])
-            acc_val = accuracy(output[idx_val], labels[idx_val])
+            # print("output.shape", output.shape)
+            # print(features.shape)
+            # print(features)
+            # print(labels)
+            # loss_train = F.nll_loss(output, labels)
+            # acc_train = accuracy(output, labels)
 
-            state.eval_acc = acc_val.item()
-            state.eval_loss = loss_val.item()
+            state.global_steps += 1
 
-        state.epoch += 1
+            eval_result = None
+            if self.can_do_eval(state):
+                eval_start = time.time()
+                state.eval_loss, state.eval_acc = self.evaluator.evaluate(self)
+                eval_end = time.time()
+                eval_result = dict(global_steps=state.global_steps,
+                                   eval_loss=state.eval_loss,
+                                   eval_acc=state.eval_acc,
+                                   time=eval_end - eval_start)
+
+            if eval_result is not None:
+                driver.event(Event.EVALUATE, eval_result)
+
+            driver.event(Event.STEP_END,
+                         step=state.global_steps,
+                         loss=state.eval_loss)
+
+            end_training = self.detect_training_status(state)
+            if end_training:
+                break
+
+        if not config.fastmode:
+            # Evaluate validation set performance separately,
+            # deactivates dropout during validation run.
+            # model.eval()
+            # print(
+            #     f"self.features[idx_val, idx_val] shape: {self.features[idx_val, idx_val].shape} \
+            #         adj[idx_val, idx_val] shape:{ adj[idx_val, idx_val].shape}"
+            # )
+
+            # output = model(self.features, adj)
+
+            output = model(
+                self.features[idx_val, :], adj[min(idx_val):max(idx_val) + 1,
+                                               min(idx_val):max(idx_val) + 1])
+
+        print(f"eval output_shape: {output.shape}")
+        loss_val = self.criterion(output, self.labels[idx_val])
+        acc_val = accuracy(output, self.labels[idx_val])
+
+        state.eval_acc = acc_val.item()
+        state.eval_loss = loss_val.item()
+
         state.num_trained_samples += len(train_dataloader.dataset)
-        print('Epoch: {:04d}'.format(state.epoch),
-              'loss_train: {:.4f}'.format(loss_train.item()),
-              'acc_train: {:.4f}'.format(acc_train.item()),
-              'loss_val: {:.4f}'.format(loss_val.item()),
-              'acc_val: {:.4f}'.format(acc_val.item()),
+        print('Epoch: {:04d}'.format(state.epoch), 'loss_train: {:.4f}'.format(
+            state.train_loss), 'acc_train: {:.4f}'.format(state.train_acc),
+              'loss_val: {:.4f}'.format(state.eval_loss),
+              'acc_val: {:.4f}'.format(state.eval_acc),
+              f'num_trained_samples: {state.num_trained_samples}',
               'time: {:.4f}s'.format(time.time() - t))
-
-        self.detect_training_status(state)
 
     def detect_training_status(self, state):
         config = self.config
@@ -108,3 +153,56 @@ class Trainer:
             state.end_training = True
 
         return state.end_training
+
+    def train_one_step(self, batch, adj):
+        # move data to the same device as model
+        batch = self.process_batch(batch, self.config.device)
+        state = self.training_state
+        self.model.train()
+
+        _, state.train_loss, state.train_acc = self.forward(batch, adj)
+        self.adapter.backward(state.train_loss, self.optimizer)
+
+        if dist_pytorch.is_dist_avail_and_initialized():
+            total = torch.tensor([state.train_loss, state.train_acc],
+                                 dtype=torch.float32,
+                                 device=self.config.device)
+            dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
+            total = total / dist.get_world_size()
+            state.train_loss, state.train_acc = total.tolist()
+        self.driver.event(Event.BACKWARD, state.global_steps, state.train_loss,
+                          state.train_acc)
+
+    def process_batch(self, batch, device):
+        """Process batch and produce inputs for the model."""
+        batch = tuple(t.to(device, non_blocking=True) for t in batch)
+        return batch
+
+    def forward(self, batch, adj):
+        features, labels = batch
+        if self.config.cuda:
+            labels = labels.cuda()
+
+        state = self.training_state
+        index_start = len(features) * state.global_steps
+        index_end = len(features) * (state.global_steps + 1)
+
+        output = self.model(features, adj[index_start:index_end,
+                                          index_start:index_end])
+
+        loss = self.criterion(output, labels)
+        acc = accuracy(output, labels)
+        return output, loss, acc
+
+    def inference(self, batch, adj):
+        """inference for valset"""
+        self.model.eval()
+        output, _, _ = self.forward(batch, adj)
+        return output
+
+    def can_do_eval(self, state):
+        config = self.config
+        do_eval = all([
+            state.global_steps >= 1,
+        ])
+        return do_eval or state.num_trained_samples >= config.max_samples_termination

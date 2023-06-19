@@ -14,6 +14,9 @@ class TrainingState:
 
     global_steps = 0
 
+    train_loss: float = 0.0
+    train_acc: float = 0.0
+    
     eval_loss: float = 0.0
     eval_acc: float = 0.0
 
