@@ -54,7 +54,7 @@ def main() -> Tuple[Any, Any]:
     train_dataset = build_train_dataset(config)
     train_dataloader = build_train_dataloader(config, train_dataset)
 
-    val_dataset, idx_val = build_eval_dataset(config)
+    val_dataset = build_eval_dataset(config)
     val_dataloader = build_eval_dataloader(config, val_dataset)
 
     seed = config.seed
