@@ -62,7 +62,7 @@ class Trainer:
 
         for batch_idx, batch in enumerate(train_dataloader):
             features, labels = batch
-            print(f"batch_idx: {batch_idx} features.shape: {features.shape}")
+            # print(f"batch_idx: {batch_idx} features.shape: {features.shape}")
             if config.cuda:
                 features = features.cuda()
                 labels = labels.cuda()
@@ -70,7 +70,7 @@ class Trainer:
                 self.labels = self.labels.cuda()
 
             driver.event(Event.STEP_BEGIN, step=state.global_steps)
-            self.train_one_step(batch, adj)
+            self.train_one_step(batch, batch_idx, adj)
             state.global_steps += 1
 
         if not config.fastmode:
@@ -109,13 +109,14 @@ class Trainer:
 
         return state.end_training
 
-    def train_one_step(self, batch, adj):
+    def train_one_step(self, batch, batch_idx, adj):
         # move data to the same device as model
         batch = self.process_batch(batch, self.config.device)
         state = self.training_state
         self.model.train()
 
-        _, state.train_loss, state.train_acc = self.forward(batch, adj)
+        _, state.train_loss, state.train_acc = self.forward(
+            batch, batch_idx, adj)
         self.adapter.backward(state.train_loss, self.optimizer)
 
         if dist_pytorch.is_dist_avail_and_initialized():
@@ -140,14 +141,14 @@ class Trainer:
         batch = tuple(t.to(device, non_blocking=True) for t in batch)
         return batch
 
-    def forward(self, batch, adj):
+    def forward(self, batch, batch_idx, adj):
         features, labels = batch
-        if self.config.cuda:
+        config = self.config
+        if config.cuda:
             labels = labels.cuda()
 
-        state = self.training_state
-        index_start = len(features) * state.global_steps
-        index_end = len(features) * (state.global_steps + 1)
+        index_start = config.train_batch_size * batch_idx
+        index_end = index_start + len(features)
 
         if index_start >= adj.shape[0]:
             return None, None, None
