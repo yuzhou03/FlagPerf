@@ -53,6 +53,10 @@ def load_data(path=".cora/", dataset="cora"):
     idx_val = torch.LongTensor(idx_val)
     idx_test = torch.LongTensor(idx_test)
 
+    # TODO remove this print
+    print(
+        f"features shape: {features.shape} labels shape:{labels.shape} adj shape:{adj.shape} idx_train shape: {idx_train.shape} idx_val shape: {idx_val.shape}  idx_test shape:{idx_test.shape}"
+    )
     return adj, features, labels, idx_train, idx_val, idx_test
 
 

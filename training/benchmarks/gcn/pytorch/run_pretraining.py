@@ -8,6 +8,7 @@ import sys
 import time
 from typing import Any, Tuple
 
+# 3rd-party lib
 import torch
 
 # benchmarks目录 append到sys.path
@@ -23,7 +24,8 @@ from train.evaluator import Evaluator
 from train.trainer import Trainer
 from train.training_state import TrainingState
 from dataloaders.dataloaders import build_train_dataset, build_train_dataloader,\
-                                    build_eval_dataset, build_eval_dataloader, gpu_load_data
+                                    build_eval_dataset, build_eval_dataloader, gpu_load_data, \
+                                    build_test_dataset, build_test_dataloader
 
 logger = None
 
@@ -43,7 +45,7 @@ def main() -> Tuple[Any, Any]:
     config.cuda = not config.no_cuda and torch.cuda.is_available()
     world_size = dist_pytorch.get_world_size()
     config.distributed = world_size > 1
-    
+
     # logger
     logger = model_driver.logger
     init_start_time = logger.previous_log_time  # init起始时间，单位ms
@@ -57,6 +59,9 @@ def main() -> Tuple[Any, Any]:
     val_dataset = build_eval_dataset(config)
     val_dataloader = build_eval_dataloader(config, val_dataset)
 
+    tes_dataset = build_test_dataset(config)
+    test_dataloader = build_test_dataloader(config, tes_dataset)
+
     seed = config.seed
 
     init_helper.set_seed(seed, model_driver.config.vendor)
@@ -65,7 +70,7 @@ def main() -> Tuple[Any, Any]:
     training_state = TrainingState()
 
     # 构建 trainer：依赖 evaluator、TrainingState对象
-    evaluator = Evaluator(config, adj, features, labels, idx_test)
+    evaluator = Evaluator(config, val_dataloader, adj)
 
     trainer = Trainer(
         driver=model_driver,
@@ -76,6 +81,10 @@ def main() -> Tuple[Any, Any]:
         config=config,
         features=features,
         labels=labels,
+        adj=adj,
+        idx_train=idx_train,
+        idx_val=idx_val,
+        idx_test=idx_test,
     )
     training_state._trainer = trainer
 
@@ -96,13 +105,14 @@ def main() -> Tuple[Any, Any]:
 
     # 训练过程
     while training_state.epoch < config.max_epochs and not training_state.end_training:
-        trainer.train_one_epoch(train_dataloader, adj, idx_val)
         training_state.epoch += 1
+        trainer.train_one_epoch(train_dataloader)
 
     dist_pytorch.main_proc_print(f"Optimization Finished!")
 
-    training_state.test_acc, training_state.test_loss = trainer.evaluator.evaluate(
-        trainer)
+    test_evaluator = Evaluator(config, test_dataloader, adj)
+    training_state.test_loss, training_state.test_loss = test_evaluator.evaluate(
+        trainer, is_testing=True)
 
     # TRAIN_END事件
     model_driver.event(Event.TRAIN_END)
@@ -131,6 +141,7 @@ if __name__ == "__main__":
             "e2e_time": e2e_time,
             "training_samples_per_second": training_perf,
             "converged": state.converged,
+            "target_acc": config_update.target_acc,
             "final_eval_acc": state.eval_acc,
             "final_eval_loss": state.eval_loss,
             "final_test_acc": state.test_acc,

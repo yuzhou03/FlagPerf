@@ -22,7 +22,7 @@ class Trainer:
 
     def __init__(self, driver: Driver, adapter, evaluator: Evaluator,
                  training_state: TrainingState, device: Device, config,
-                 features, labels):
+                 features, labels, adj, idx_train, idx_val, idx_test):
         super(Trainer, self).__init__()
         self.driver = driver
         self.adapter = adapter
@@ -33,6 +33,10 @@ class Trainer:
 
         self.features = features
         self.labels = labels
+        self.adj = adj
+        self.idx_train = idx_train
+        self.idx_val = idx_val
+        self.idx_test = idx_test
 
     def init(self):
         dist_pytorch.main_proc_print("Init process")
@@ -46,13 +50,13 @@ class Trainer:
         self.criterion = F.nll_loss
         self.optimizer = create_optimizer(self.model, self.config)
 
-    def train_one_epoch(self, train_dataloader, adj, idx_val):
+    def train_one_epoch(self, train_dataloader):
 
         t = time.time()
         driver = self.driver
-        config = self.config
         model = self.model
         state = self.training_state
+        adj = self.adj
 
         model.train()
         self.optimizer.zero_grad()
@@ -61,39 +65,35 @@ class Trainer:
             train_dataloader.sampler.set_epoch(state.epoch)
 
         for batch_idx, batch in enumerate(train_dataloader):
-            features, labels = batch
-            # print(f"batch_idx: {batch_idx} features.shape: {features.shape}")
-            if config.cuda:
-                features = features.cuda()
-                labels = labels.cuda()
-                adj = adj.cuda()
-                self.labels = self.labels.cuda()
-
+            state.global_steps += 1
             driver.event(Event.STEP_BEGIN, step=state.global_steps)
             self.train_one_step(batch, batch_idx, adj)
-            state.global_steps += 1
 
-        if not config.fastmode:
-            # Evaluate validation set performance separately,
-            # deactivates dropout during validation run.
-            model.eval()
-            output = model(
-                self.features[idx_val], adj[min(idx_val):max(idx_val) + 1,
-                                            min(idx_val):max(idx_val) + 1])
+            eval_result = None
+            if self.can_do_eval(state):
+                eval_start = time.time()
+                state.eval_loss, state.eval_acc = self.evaluator.evaluate(self)
+                eval_end = time.time()
+                eval_result = dict(global_steps=state.global_steps,
+                                   eval_loss=state.eval_loss,
+                                   eval_acc=state.eval_acc,
+                                   time=eval_end - eval_start)
 
-        loss_val = self.criterion(output, self.labels[idx_val])
-        acc_val = accuracy(output, self.labels[idx_val])
+            state.end_training = self.detect_training_status(state)
 
-        state.eval_acc = acc_val.item()
-        state.eval_loss = loss_val.item()
+            if eval_result is not None:
+                driver.event(Event.EVALUATE, eval_result)
 
-        self.detect_training_status(state)
+            if state.end_training:
+                break
+
         state.num_trained_samples += len(train_dataloader.dataset)
+
         print('Epoch: {:04d}'.format(state.epoch), 'loss_train: {:.4f}'.format(
             state.train_loss), 'acc_train: {:.4f}'.format(state.train_acc),
               'loss_val: {:.4f}'.format(state.eval_loss),
               'acc_val: {:.4f}'.format(state.eval_acc),
-              'num_trained_samples: {:.4f}'.format(state.num_trained_samples),
+              'num_trained_samples: {:8d}'.format(state.num_trained_samples),
               'time: {:.4f}s'.format(time.time() - t))
 
     def detect_training_status(self, state):
@@ -121,6 +121,7 @@ class Trainer:
 
         if dist_pytorch.is_dist_avail_and_initialized():
             if state.train_loss is None or state.train_acc is None:
+                print("train_loss or train_acc is None")
                 total = torch.tensor([0, 0],
                                      dtype=torch.float32,
                                      device=self.config.device)
@@ -144,17 +145,47 @@ class Trainer:
     def forward(self, batch, batch_idx, adj):
         features, labels = batch
         config = self.config
-        if config.cuda:
-            labels = labels.cuda()
 
-        index_start = config.train_batch_size * batch_idx
+        index_start = min(self.idx_train).item() + dist_pytorch.global_batch_size(config) * batch_idx
         index_end = index_start + len(features)
 
-        if index_start >= adj.shape[0]:
+        print(
+            f"index_start:{index_start} index_end:{index_end} len(features):{len(features)} batch_idx:{batch_idx}"
+        )
+
+        if index_start >= len(adj):
             return None, None, None
 
+        # NOTE: must keep second param as NxN matrix, N = len(features)
+        output = self.model(features, adj[index_start:index_end, index_start:index_end])
+
+        loss = self.criterion(output, labels)
+        acc = accuracy(output, labels)
+        return output, loss, acc
+
+    def inference(self, batch, batch_idx, adj, is_testing: bool = False):
+        self.model.eval()
+
+        features, labels = batch
+        config = self.config
+
+        if is_testing:
+            index_start = min(self.idx_test).item() + (config.test_batch_size * dist.get_world_size()) * batch_idx
+        else:
+            index_start = min(self.idx_val).item() + (config.eval_batch_size * dist.get_world_size()) * batch_idx
+
+        index_end = index_start + len(features)
+
+        if index_start >= len(adj):
+            return None, None, None
+
+        # NOTE: must keep second param as NxN matrix, N = len(features)
         output = self.model(features, adj[index_start:index_end,
                                           index_start:index_end])
+
+        print(
+            f"inference output shape: {output.shape} epoch: {self.training_state.epoch}  batch_idx:{batch_idx}"
+        )
 
         loss = self.criterion(output, labels)
         acc = accuracy(output, labels)
@@ -163,13 +194,13 @@ class Trainer:
     def can_do_eval(self, state):
         config = self.config
         do_eval = all([
-            config.eval_data is not None,
+            # config.eval_data is not None,
             state.num_trained_samples >= config.eval_iter_start_samples,
             state.global_steps %
             math.ceil(config.eval_interval_samples /
                       dist_pytorch.global_batch_size(config)) == 0,
             config.eval_interval_samples > 0,
-            state.global_steps > 1,
+            state.global_steps > 0,
         ])
 
         return do_eval or state.num_trained_samples >= config.max_samples_termination

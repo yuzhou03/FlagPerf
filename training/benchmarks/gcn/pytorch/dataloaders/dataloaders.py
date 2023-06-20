@@ -2,7 +2,6 @@ from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 from utils.utils import load_data
 
 
-
 def gpu_load_data(args):
     adj, features, labels, idx_train, idx_val, idx_test = load_data(
         path=args.data_dir, dataset=args.dataset)
@@ -10,7 +9,6 @@ def gpu_load_data(args):
 
 
 def build_train_dataset(args):
-    # Load data
     adj, features, labels, idx_train, idx_val, idx_test = gpu_load_data(args)
 
     train_dataset = TensorDataset(features[idx_train], labels[idx_train])
@@ -36,7 +34,6 @@ def build_train_dataloader(args, train_dataset):
 
 
 def build_eval_dataset(args):
-    # Load data
     adj, features, labels, idx_train, idx_val, idx_test = gpu_load_data(args)
     dataset = TensorDataset(features[idx_val], labels[idx_val])
     return dataset
@@ -51,3 +48,20 @@ def build_eval_dataloader(args, val_dataset):
                                 batch_size=args.eval_batch_size,
                                 pin_memory=False)
     return val_dataloader
+
+
+def build_test_dataset(args):
+    adj, features, labels, idx_train, idx_val, idx_test = gpu_load_data(args)
+    dataset = TensorDataset(features[idx_test], labels[idx_test])
+    return dataset
+
+
+def build_test_dataloader(args, test_dataset):
+    sampler = DistributedSampler(test_dataset) if args.distributed else None
+    dataloader = DataLoader(test_dataset,
+                            num_workers=args.num_workers,
+                            shuffle=False,
+                            sampler=sampler,
+                            batch_size=args.test_batch_size,
+                            pin_memory=False)
+    return dataloader

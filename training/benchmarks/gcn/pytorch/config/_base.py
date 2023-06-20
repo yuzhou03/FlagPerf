@@ -11,8 +11,10 @@ seed: int = 42
 do_train = True
 fp16 = False
 dist_backend: str = None
+
 train_batch_size: int = None
 eval_batch_size: int = None
+test_batch_size: int = None
 
 # required params
 
@@ -28,9 +30,6 @@ gradient_accumulation_steps: int = 1
 dataset = "cora"
 # number of workers
 num_workers = 1
-
-# Validate during training pass.
-fastmode: bool = False
 
 # Number of hidden units.
 hidden: int = 16
@@ -56,4 +55,11 @@ cuda: bool = None
 
 distributed: bool = None
 
-max_samples_termination = 2708*200
+# 140 * 200
+max_samples_termination = 28000
+
+# Sample to begin performing eval.
+eval_iter_start_samples: int = 100
+
+# If set to -1, disable eval, else evaluate every eval_iter_samples during training
+eval_interval_samples: int = 140  # 1 epoch
