@@ -52,4 +52,5 @@ CASES = {
     "glm:pytorch:A100:1:8:1": "/home/datasets_ckpt/glm/train/",
     "cpm:pytorch:A100:1:8:1": "/home/datasets_ckpt/cpm/train/",
     "resnet50:pytorch:A100:1:8:1": "/home/datasets_ckpt/resnet50/train/",
+    "compgcn:pytorch_1.13:A100:1:8:1": "/raid/dataset/comp_gcn",
 }
