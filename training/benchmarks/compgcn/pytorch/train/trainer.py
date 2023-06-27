@@ -106,8 +106,8 @@ class Trainer:
                                  device=self.config.device)
             dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
             total = total / dist.get_world_size()
-            state.eval_MRR, state.eval_Hit1, state.eval_Hit3, state.eval_Hit10 = total.tolist(
-            )
+            state.eval_MRR, state.eval_Hit1, state.eval_Hit3, state.eval_Hit10 = \
+                total.tolist()
 
         # validate
         if state.eval_MRR > best_mrr:

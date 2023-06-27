@@ -1,6 +1,5 @@
 import torch as th
 
-from utils.meter import AverageMeter
 
 class Evaluator:
 
@@ -20,11 +19,6 @@ class Evaluator:
         model.eval()
         with th.no_grad():
             results = {}
-            mrr = AverageMeter('mrr', ':8.5f')
-            mr = AverageMeter('mr', ':8.5f')
-            hits1 = AverageMeter('hits1', ':8.5f')
-            hits3 = AverageMeter('hits3', ':8.5f')
-            hits10 = AverageMeter('hits10', ':8.5f')
 
             train_iter = iter(data_iter["{}_{}".format(split, mode)])
 
@@ -52,42 +46,15 @@ class Evaluator:
                 )[b_range, obj])
                 ranks = ranks.float()
 
-                reduced_ranks = ranks
-
-                # if dist_pytorch.is_dist_avail_and_initialized():
-                #     th.distributed.barrier()
-                #     reduced_ranks = reduce_tensor(ranks, config.n_device)
-
-                size = ranks.shape[0]
-
-                results["count"] = th.numel(reduced_ranks) + results.get(
-                    "count", 0.0)
-
-                results["mr"] = th.sum(reduced_ranks).item() + results.get(
-                    "mr", 0.0)
-
-                results["mrr"] = th.sum(
-                    1.0 / reduced_ranks).item() + results.get("mrr", 0.0)
-
+                ranks = ranks.float()
+                results["count"] = th.numel(ranks) + results.get("count", 0.0)
+                results["mr"] = th.sum(ranks).item() + results.get("mr", 0.0)
+                results["mrr"] = th.sum(1.0 / ranks).item() + results.get(
+                    "mrr", 0.0)
                 for k in [1, 3, 10]:
                     results["hits@{}".format(k)] = th.numel(
-                        reduced_ranks[reduced_ranks <= (k)]) + results.get(
+                        ranks[ranks <= (k)]) + results.get(
                             "hits@{}".format(k), 0.0)
-                # mr.update(th.sum(reduced_ranks).item(), size)
-                # mrr.update(th.sum(1.0 / reduced_ranks).item(), size)
-                # hits1.update(th.numel(reduced_ranks[reduced_ranks <= (1)]), size)
-                # hits3.update(th.numel(reduced_ranks[reduced_ranks <= (3)]), size)
-                # hits10.update(th.numel(reduced_ranks[reduced_ranks <= (10)]), size)
-
-                # print(f"mode:{mode} step:{step} config.n_device:{config.n_device} tmp_count:{th.numel(reduced_ranks)} size:{size} count:{mr.count} \
-                #       tmp_mrr:{th.sum(1.0 / reduced_ranks).item()} temp_mr:{th.sum(reduced_ranks).item()}" )
-
-            # results['count'] = mrr.count
-            # results['mr'] = mr.avg
-            # results['mrr'] = mrr.avg
-            # results['hits@1'] = hits1.avg
-            # results['hits@3'] = hits3.avg
-            # results['hits@10'] = hits10.avg
 
         return results
 
