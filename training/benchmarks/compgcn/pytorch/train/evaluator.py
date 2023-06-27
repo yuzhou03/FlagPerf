@@ -23,7 +23,6 @@ class Evaluator:
         config = self.config
         with th.no_grad():
             results = {}
-            # count = AverageMeter('count', ':10d')
             mrr = AverageMeter('mrr', ':8.5f')
             mr = AverageMeter('mr', ':8.5f')
             hits1 = AverageMeter('hits1', ':8.5f')
@@ -114,8 +113,6 @@ class Evaluator:
                                      mode="head")
         results = {}
         count = float(left_results["count"])
-
-        # print(f"evaluate left_results count: {count}")
 
         # combine the head and tail prediction results
         # Metrics: MRR, MR, and Hit@k
