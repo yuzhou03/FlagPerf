@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class TrainingState:
     init_time = 0
@@ -9,6 +10,7 @@ class TrainingState:
     epoch: int = 1
     end_training: bool = False
     converged: bool = False
+    num_trained_samples = 0
 
     loss: float = 0.0
     eval_MRR: float = 0.0

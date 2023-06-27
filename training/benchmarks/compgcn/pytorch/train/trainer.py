@@ -59,10 +59,7 @@ class Trainer:
 
         for step, batch in enumerate(data_iter["train"]):
             state.global_steps += 1
-
-            state.num_trained_samples = state.global_steps * \
-                  dist_pytorch.global_batch_size(self.config)
-
+            state.num_trained_samples += batch[0].shape[0]
             driver.event(Event.STEP_BEGIN, step=state.global_steps)
             self.train_one_step(batch)
 
