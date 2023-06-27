@@ -1,15 +1,9 @@
-import os
-import sys
-
-from torch import nn
+from torch import nn, Tensor
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.optim import Optimizer
 
-from driver.dist_pytorch import is_dist_avail_and_initialized
+from driver.dist_pytorch import is_dist_avail_and_initialized, main_proc_print
 import config
-
-CURR_PATH = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.abspath(os.path.join(CURR_PATH, "../../../")))
-from driver.dist_pytorch import main_proc_print
 
 
 def convert_model(model: nn.Module) -> nn.Module:
@@ -28,3 +22,9 @@ def model_to_ddp(model: nn.Module) -> nn.Module:
     if is_dist_avail_and_initialized():
         model = DDP(model, device_ids=[config.local_rank])
     return model
+
+
+def backward(loss: Tensor, optimizer: Optimizer):
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
