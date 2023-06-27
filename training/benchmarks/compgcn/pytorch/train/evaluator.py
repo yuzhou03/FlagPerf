@@ -65,34 +65,34 @@ class Evaluator:
 
                 # print(f"step:{step} size:{size} ranks:{ranks} reduced_ranks:{reduced_ranks}")
 
-                results["count"] = th.numel(reduced_ranks) + results.get(
-                    "count", 0.0)
-                # count.update(th.numel(reduced_ranks))
+                # results["count"] = th.numel(reduced_ranks) + results.get(
+                #     "count", 0.0)
 
-                results["mr"] = th.sum(reduced_ranks).item() + results.get(
-                    "mr", 0.0)
-                # mr.update(th.sum(reduced_ranks).item(), size)
-                results["mrr"] = th.sum(
-                    1.0 / reduced_ranks).item() + results.get("mrr", 0.0)
-                # mrr.update(th.sum(1.0 / reduced_ranks).item(), size)
+                # results["mr"] = th.sum(reduced_ranks).item() + results.get(
+                #     "mr", 0.0)
+                
+                # results["mrr"] = th.sum(
+                #     1.0 / reduced_ranks).item() + results.get("mrr", 0.0)
 
-                # print(f"config.n_device:{config.n_device} tmp_count:{th.numel(reduced_ranks)} size:{size} count:{mr.count} \
-                #       tmp_mrr:{th.sum(1.0 / reduced_ranks).item()} temp_mr:{th.sum(reduced_ranks).item()}" )
+                mr.update(th.sum(reduced_ranks).item(), size)
+                mrr.update(th.sum(1.0 / reduced_ranks).item(), size)
+                hits1.update(th.numel(reduced_ranks[reduced_ranks <= (1)]), size)
+                hits3.update(th.numel(reduced_ranks[reduced_ranks <= (3)]), size)
+                hits10.update(th.numel(reduced_ranks[reduced_ranks <= (10)]), size)
 
-                # hits1.update(th.numel(reduced_ranks[reduced_ranks <= (1)]), size)
-                # hits3.update(th.numel(reduced_ranks[reduced_ranks <= (3)]), size)
-                # hits10.update(th.numel(reduced_ranks[reduced_ranks <= (10)]), size)
+                print(f"config.n_device:{config.n_device} tmp_count:{th.numel(reduced_ranks)} size:{size} count:{mr.count} \
+                      tmp_mrr:{th.sum(1.0 / reduced_ranks).item()} temp_mr:{th.sum(reduced_ranks).item()}" )
 
-                # results['count'] = mrr.count
-                # results['mr'] = mr.avg
-                # results['mrr'] = mrr.avg
-                # results['hits@1'] = hits1.avg
-                # results['hits@3'] = hits3.avg
-                # results['hits@10'] = hits10.avg
-                for k in [1, 3, 10]:
-                    results["hits@{}".format(k)] = th.numel(
-                        reduced_ranks[reduced_ranks <= (k)]) + results.get(
-                            "hits@{}".format(k), 0.0)
+            results['count'] = mrr.count
+            results['mr'] = mr.avg
+            results['mrr'] = mrr.avg
+            results['hits@1'] = hits1.avg
+            results['hits@3'] = hits3.avg
+            results['hits@10'] = hits10.avg
+                # for k in [1, 3, 10]:
+                #     results["hits@{}".format(k)] = th.numel(
+                #         reduced_ranks[reduced_ranks <= (k)]) + results.get(
+                #             "hits@{}".format(k), 0.0)
 
         return results
 
