@@ -19,7 +19,6 @@ class Evaluator:
         model.eval()
         with th.no_grad():
             results = {}
-
             train_iter = iter(data_iter["{}_{}".format(split, mode)])
 
             for step, batch in enumerate(train_iter):
@@ -46,7 +45,6 @@ class Evaluator:
                 )[b_range, obj])
                 ranks = ranks.float()
 
-                ranks = ranks.float()
                 results["count"] = th.numel(ranks) + results.get("count", 0.0)
                 results["mr"] = th.sum(ranks).item() + results.get("mr", 0.0)
                 results["mrr"] = th.sum(1.0 / ranks).item() + results.get(

@@ -47,7 +47,6 @@ class Trainer:
 
     def train_one_epoch(self, data):
         model = self.model
-        epoch = self.training_state.epoch
         state = self.training_state
         driver = self.driver
 
@@ -67,9 +66,9 @@ class Trainer:
         self.validate()
         t2 = time()
 
-        dist_pytorch.main_proc_print(
-            "In epoch {}, Train Loss: {:.4f}, Valid MRR: {:.5},  Valid Hits@1: {:.5}, Train time: {}, Valid time: {}"
-            .format(epoch, state.loss, state.eval_MRR, state.eval_Hit1,
+        print(
+            "In epoch {:3d}, Train Loss: {:.4f}, Valid MRR: {:.5},  Valid Hits@1: {:.5}, Train time: {}, Valid time: {}"
+            .format(state.epoch, state.loss, state.eval_MRR, state.eval_Hit1,
                     t1 - t0, t2 - t1))
 
     def validate(self):
@@ -90,20 +89,20 @@ class Trainer:
                                               data_iter,
                                               split="valid")
 
-        state.eval_MRR = val_results['mrr']
+        state.eval_MRR, state.eval_MR = val_results['mrr'], val_results['mr']
         state.eval_Hit1, state.eval_Hit3, state.eval_Hit10 = val_results[
             'hits@1'], val_results['hits@3'], val_results['hits@10']
 
         if dist_pytorch.is_dist_avail_and_initialized():
             total = torch.tensor([
-                state.eval_MRR, state.eval_Hit1, state.eval_Hit3,
+                state.eval_MRR, state.eval_MR, state.eval_Hit1, state.eval_Hit3,
                 state.eval_Hit10
             ],
                                  dtype=torch.float32,
                                  device=self.config.device)
-            dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
+            dist.all_reduce(total, dist.ReduceOp.SUM)
             total = total / dist.get_world_size()
-            state.eval_MRR, state.eval_Hit1, state.eval_Hit3, state.eval_Hit10 = \
+            state.eval_MRR, state.eval_MR, state.eval_Hit1, state.eval_Hit3, state.eval_Hit10 = \
                 total.tolist()
 
         # validate
@@ -129,13 +128,11 @@ class Trainer:
         state.loss = self.forward(batch)
         self.adapter.backward(state.loss, self.optimizer)
 
-        # valid metrics: mrr, hits@1
-
         if dist_pytorch.is_dist_avail_and_initialized():
             total = torch.tensor([state.loss],
                                  dtype=torch.float32,
                                  device=self.config.device)
-            dist.all_reduce(total, dist.ReduceOp.SUM, async_op=False)
+            dist.all_reduce(total, dist.ReduceOp.SUM)
             total = total / dist.get_world_size()
             state.loss = total.tolist()[0]
 
@@ -161,10 +158,6 @@ class Trainer:
         # compute loss
         loss = self.criterion(output, label)
         return loss
-
-    def inference(self, batch):
-        self.model.eval()
-        return self.forward(batch)
 
     def can_do_eval(self, state):
         do_eval = all([
