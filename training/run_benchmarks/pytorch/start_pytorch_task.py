@@ -117,7 +117,7 @@ def _set_common_ddp_envs(task_args):
 
     # set GPU/MLU device env, TODO other vendor's device
     if task_args.visible_dev_env is not None:
-        acce_visible = range(0, task_args.nproc)
+        acce_visible = range(3, 4)
         current_env[task_args.visible_dev_env] = ",".join(
             str(_id) for _id in acce_visible)
     return current_env
