@@ -29,7 +29,7 @@ ACCE_CONTAINER_OPT = " --gpus all"
 ACCE_VISIBLE_DEVICE_ENV_NAME = "CUDA_VISIBLE_DEVICES"
 
 # Set pip source, which will be used in preparing envs in container
-PIP_SOURCE = "https://mirror.baidu.com/pypi/simple"
+PIP_SOURCE = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
 # The path that flagperf deploy in the cluster.
 # Users must set FLAGPERF_PATH to where flagperf deploy
@@ -112,6 +112,7 @@ CASES = {
     # "transformer_xl:pytorch:R300:1:8:1": "/raid/dataset/transformer_xl/",
     # "glm:pytorch:R300:1:8:1": "/raid/home_datasets_ckpt/glm/train/",
     # "mobilenetv2:pytorch:R300:1:8:1": "/raid/dataset/ImageNet_1k_2012/",
-
+    # "bert:pytorch:R300:1:8:1": "/raid/dataset/bert_large/train",
+    # "distilbert:pytorch:R300:1:8:1": "/raid/dataset/distilbert/",
 }
 
