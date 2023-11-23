@@ -257,7 +257,7 @@ def main():
     xpu_fn = str(log_path + '/kunlunxin_monitor.log')
     sys_fn = str(log_path + '/sys_info.log')
     cmd = get_system_info()
-    with open(sys_fn, "w") as f:
+    with open(sys_fn, "a+") as f:
         p = subprocess.Popen(cmd, shell=True, stdout=f, stderr=subprocess.STDOUT)
         p.wait()
 
