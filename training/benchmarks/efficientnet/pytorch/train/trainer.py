@@ -157,6 +157,9 @@ class Trainer:
         if state.num_trained_samples > config.max_samples_termination:
             state.end_training = True
 
+        if state.epoch >= config.max_epoch:
+            state.end_training = True
+
         return state.end_training
 
     def forward(self, batch):

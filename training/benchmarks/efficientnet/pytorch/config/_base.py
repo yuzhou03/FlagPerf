@@ -160,3 +160,5 @@ device: str = None
 n_device: int = 1
 
 distributed : bool = False
+
+max_epoch = 1
