@@ -4,4 +4,4 @@ train_batch_size = 96
 eval_batch_size = 96
 
 
-max_epoch = 1
+epochs = 1

@@ -161,4 +161,4 @@ n_device: int = 1
 
 distributed : bool = False
 
-max_epoch = 1
+max_epoch = 0
