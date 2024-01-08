@@ -45,7 +45,6 @@ from utils import hyperparams_flags
 from utils.misc import keras_utils
 
 logger = None
-pp = pprint.PrettyPrinter()
 
 def get_dtype_map() -> Mapping[str, tf.dtypes.DType]:
     """Returns the mapping from dtype string representations to TF dtypes."""
@@ -140,10 +139,6 @@ def check_must_envconfigs(params):
     params.local_rank = int(os.environ['FLAGPERF_NODE_RANK'])
     params.runtime.num_gpus = int(os.environ["FLAGPERF_NPROC"])
 
-    print("================= check_must_envconfigs Start ========================")
-    print('params: ', pp.pformat(params.as_dict())) 
-    print("================= check_must_envconfigs End ========================")
-
     if params.runtime.distribution_strategy == 'multi_worker_mirrored':
         hosts = os.environ["FLAGPERF_HOSTS"].split(",")
         ports = os.environ["FLAGPERF_HOSTS_PORTS"].split(",")
@@ -159,8 +154,7 @@ def _get_params_from_flags(flags_obj: flags.FlagValues):
 
     global logger
     pp = pprint.PrettyPrinter()
-
-    params = configs.get_config(model='resnet', dataset='imagenet')
+    params = configs.get_config(flags_obj, model='resnet', dataset='imagenet')
     logging.info('_get_params_from_flags Base params: %s', pp.pformat(params.as_dict()))
 
     driver = Driver(params, [])
@@ -278,10 +272,6 @@ def define_classifier_flags():
 
 def serialize_config(params: base_configs.ExperimentConfig, model_dir: str):
     """Serializes and saves the experiment config."""
-    print("================ serialize_config START ==================")
-    print("model_dir", model_dir)
-    print("params", params)
-    print("================ serialize_config END ==================")
     params_save_path = os.path.join(model_dir, 'params.yaml')
     logging.info('Saving experiment configuration to %s', params_save_path)
     tf.io.gfile.makedirs(model_dir)
@@ -448,31 +438,6 @@ def run(flags_obj: flags.FlagValues,
   """
 
     params, driver = _get_params_from_flags(flags_obj)
-
-    print("======================RUN START===================")
-    pp = pprint.PrettyPrinter()
-    print("flags_obj")    
-    print(flags_obj)
-    print('Base params: ', pp.pformat(params.as_dict()))
-    print("params.mode", params.mode)
-    # if not hasattr(params, "mode") or not params.mode:
-    #     setattr(params, "mode", "train_and_eval")
-    params.train_dataset.data_dir = "/raid/dataset/ImageNet2012_tfrecords"
-    params.validation_dataset.data_dir = "/raid/dataset/ImageNet2012_tfrecords"
-
-    params.model_dir = "."
-    params.mode = "train_and_eval"
-    # if not hasattr(params, "do_train"):
-    #     setattr(params, "do_train", True)
-
-    # if not hasattr(params, "target_accuracy"):
-    #     setattr(params, "target_accuracy", 0.01)
-    params.do_train = True
-    params.target_accuracy = 0.005
-
-    print('Updated params: ', pp.pformat(params.as_dict()))    
-    print("======================RUN END ===================")
-
     if params.mode == 'train_and_eval':
         return train_and_eval(params, strategy_override, driver)
     elif params.mode == 'export_only':
@@ -491,7 +456,6 @@ def main(_):
     if params.do_train:
         finished_info = {
             "e2e_time": e2e_time,
-            "training_sequences_per_second": stats['avg_exp_per_second'],
             "num_trained_samples": stats['num_trained_samples'],
             "train_time": stats['raw_train_time'],
             "train_no_eval_time": stats['no_eval_time'],

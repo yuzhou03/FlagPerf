@@ -49,11 +49,6 @@ class Driver(object):
                         help="The accelerator vendor that run the located.")
         known_args, unknown_args = parser.parse_known_args()
 
-        print("=============== setup_config START ================")
-        print("known_args", known_args)
-        print("unknown_args", unknown_args)
-        print("=============== setup_config END ================")
-
         config_manager.activate(self.config, self.mutable_params,
                                 known_args.extern_config_dir,
                                 known_args.extern_config_file,

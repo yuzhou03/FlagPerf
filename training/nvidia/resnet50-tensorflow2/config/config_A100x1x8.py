@@ -17,7 +17,7 @@ runtime = dict(distribution_strategy='mirrored',
                tpu=None,
                batchnorm_spatial_persistent=True)
 train_dataset = dict(name='imagenet2012',
-                     data_dir='/mnt/data/ImageNet2012/tf_records',
+                     data_dir='/raid/dataset/ImageNet2012/tf_records',
                      builder='records',
                      split='train',
                      image_size=224,
@@ -30,7 +30,7 @@ train_dataset = dict(name='imagenet2012',
                      standardize=True)
 validation_dataset = dict(
     name='imagenet2012',
-    data_dir='/mnt/data/ImageNet2012/tf_records',
+    data_dir='/raid/dataset/ImageNet2012/tf_records',
     builder='records',
     split='validation',
     image_size=224,
