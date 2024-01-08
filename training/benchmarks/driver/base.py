@@ -48,6 +48,12 @@ class Driver(object):
                         required=True,
                         help="The accelerator vendor that run the located.")
         known_args, unknown_args = parser.parse_known_args()
+
+        print("=============== setup_config START ================")
+        print("known_args", known_args)
+        print("unknown_args", unknown_args)
+        print("=============== setup_config END ================")
+
         config_manager.activate(self.config, self.mutable_params,
                                 known_args.extern_config_dir,
                                 known_args.extern_config_file,
@@ -56,6 +62,10 @@ class Driver(object):
         if known_args.extern_module_dir:
             mod_util.install_extern_modules(known_args.extern_module_dir,
                                             self.extern_modules)
+
+        if not hasattr(self.config, "local_rank"):
+           self.config.local_rank = 0
+                                                        
         self.logger = perf_logger.PerfLogger.get_default_logger(
             rank=self.config.local_rank)
         

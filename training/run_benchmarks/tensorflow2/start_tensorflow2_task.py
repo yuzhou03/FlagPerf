@@ -64,7 +64,7 @@ def parse_args():
 
     parser.add_argument("--vendor",
                         type=str,
-                        required=True,
+                        required=False,
                         help="The accelerator vendor that run the located.")
     parser.add_argument("--visible_dev_env",
                         type=str,
@@ -127,6 +127,11 @@ def _set_tf_container_envs(task_args):
     current_env["FLAGPERF_HOSTS"] = task_args.hosts
     current_env["FLAGPERF_HOSTS_PORTS"] = task_args.hosts_ports
 
+    print("****************** _set_tf_container_envs START *********************")
+    print("current_env", current_env)
+    print("FLAGPERF_NODE_RANK", current_env["FLAGPERF_NODE_RANK"])
+    print("****************** _set_tf_container_envs END *********************")
+
     # set GPU/MLU device env, TODO other vendor's device
     if task_args.visible_dev_env is not None:
         acce_visible = range(0, task_args.nproc)
@@ -145,11 +150,13 @@ def _get_basic_train_script_args(task_args):
         extern_module_dir = helper.get_extern_module_dir(task_args)
     basic_train_script_args = " --data_dir " + task_args.data_dir \
                               + " --extern_config_dir " + config_dir \
-                              + " --extern_config_file " + config_file
+                              + " --extern_config_file " + config_file \
+                              + " --vendor " + task_args.vendor 
+    print("basic_train_script_args", basic_train_script_args)
 
     if extern_module_dir is not None and task_args.enable_extern_config:
         basic_train_script_args += " --enable_extern_config " \
-                                   + "--extern_module_dir " + extern_module_dir
+                                   + " --extern_module_dir " + extern_module_dir
     return basic_train_script_args
 
 
@@ -168,6 +175,7 @@ def main():
         sys.exit(3)
 
     train_script_path = helper.get_train_script_path(task_args)
+    print("train_script_path", train_script_path)
     if train_script_path is None:
         START_LOGGER.error("Can't find path of train script.")
         sys.exit(4)

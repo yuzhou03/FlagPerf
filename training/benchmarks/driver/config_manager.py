@@ -5,10 +5,12 @@
 import importlib
 import inspect
 import os
+import pprint
 import sys
 from argparse import ArgumentParser
 from typing import Iterable, Mapping
 
+pp = pprint.PrettyPrinter()
 
 def import_config(config_path: str):
     if os.path.exists(config_path):
@@ -157,8 +159,19 @@ def activate(base_config,
                                                enable_extern_config)
     
     # TODO：后续考虑换一个更优雅的方式
-    if "tensorflow2" in base_config.__path__:
+    print("===================================== activate-START =====================================")
+    print("base_config", pp.pformat(base_config.as_dict()))
+    print("parsed_params", parsed_params)
+    
+    if hasattr(base_config, "__file__"):
+        print("base_config.__file__", base_config.__file__)
+    print("===================================== activate-END =====================================")
+
+    if "tensorflow2" in parsed_params.extern_config_dir:
+        print("base_config.override...")
         base_config.override(parsed_params.__dict__, False)
+        print("base_config")
+        print(base_config)
     else:
         _merge_dict_to_config(parsed_params.__dict__, base_config.__dict__)
 

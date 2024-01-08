@@ -52,7 +52,7 @@ train = dict(resume_checkpoint=True,
              epochs=90,
              time_history=dict(log_steps=100),
              callbacks=dict(enable_checkpoint_and_export=False,
-                            enable_backup_and_restore=True))
+                            enable_backup_and_restore=False))
 evaluation = dict(epochs_between_evals=1)
 
 # local_rank for distributed training on gpus
