@@ -301,7 +301,7 @@ class Config(params_dict.ParamsDict):
         # pylint: disable=protected-access
         params = copy.deepcopy(self)
         params._locked = False
-        params._override(kwargs, is_strict=False)
+        params._override(kwargs, is_strict=True)
         # pylint: enable=protected-access
         return params
 

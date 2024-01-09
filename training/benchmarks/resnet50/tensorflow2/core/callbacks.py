@@ -96,6 +96,7 @@ class GetTrainingStatus(tf.keras.callbacks.Callback):
         self.converged = False
 
     def on_batch_end(self, batch, logs=None):
+        # {'loss': 12.375970840454102, 'accuracy': 0.0009765625, 'top_5_accuracy': 0.005859375}
         if logs["accuracy"] >= self.target_accuracy:
             self.converged = True
             self.model.stop_training = True

@@ -168,6 +168,7 @@ def build_stats(history, eval_output, callbacks):
   """
     stats = {}
     if eval_output:
+        print("eval_output", eval_output)
         stats['accuracy_top_1'] = float(eval_output[1])
         stats['eval_loss'] = float(eval_output[0])
     if history and history.history:

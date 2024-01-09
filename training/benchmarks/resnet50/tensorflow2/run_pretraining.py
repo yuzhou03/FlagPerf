@@ -379,7 +379,7 @@ def train_and_eval(params: base_configs.ExperimentConfig,
     
     # train
     stats_training = dict()
-    raw_train_start_time = logger.previous_log_time
+    raw_train_start_time = time.time()
     driver.event(Event.TRAIN_START)
     # model.fit()一次性加载整个数据集到内存中，适用于数据集较小，不会导致内存溢出的情况。
     history = model.fit(train_dataset,
@@ -389,7 +389,7 @@ def train_and_eval(params: base_configs.ExperimentConfig,
                         callbacks=callbacks,
                         verbose=2,
                         **validation_kwargs)
-    stats_training['no_eval_time'] = time.time() - raw_train_start_time/1e+3
+    stats_training['no_eval_time'] = time.time() - raw_train_start_time
 
     driver.event(Event.TRAIN_END)
 
@@ -402,8 +402,7 @@ def train_and_eval(params: base_configs.ExperimentConfig,
 
     # TODO(dankondratyuk): eval and save final test accuracy
     stats = common.build_stats(history, validation_output, callbacks)
-    raw_train_end_time = logger.previous_log_time
-    params.raw_train_time = (raw_train_end_time - raw_train_start_time) / 1e+3
+    params.raw_train_time = time.time() - raw_train_start_time
     stats['no_eval_time'] = stats_training['no_eval_time']
     stats['raw_train_time'] = params.raw_train_time
     stats['pure_compute_time'] = stats_training['no_eval_time']
