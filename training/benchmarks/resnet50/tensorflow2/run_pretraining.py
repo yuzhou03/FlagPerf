@@ -456,6 +456,7 @@ def main(_):
         finished_info = {
             "e2e_time": e2e_time,
             "num_trained_samples": stats['num_trained_samples'],
+            "init_time": params.init_time,
             "train_time": stats['raw_train_time'],
             "train_no_eval_time": stats['no_eval_time'],
             "pure_training_computing_time": stats['pure_compute_time'],
@@ -465,8 +466,6 @@ def main(_):
             "converged": stats["converged"],
             "final_accuracy": stats["accuracy_top_1"],
             "final_loss": stats["eval_loss"],
-            "raw_train_time": params.raw_train_time,
-            "init_time": params.init_time,
         }
     else:
         finished_info = {"e2e_time": e2e_time}
