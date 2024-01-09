@@ -143,7 +143,7 @@ def check_must_envconfigs(params):
         hosts = os.environ["FLAGPERF_HOSTS"].split(",")
         ports = os.environ["FLAGPERF_HOSTS_PORTS"].split(",")
         params.runtime.worker_hosts = ",".join(
-            [hosts[i] + ":" + ports[i] for i in range(len(hosts))])
+            [hosts[i] + ":" + ports[0] for i in range(len(hosts))])
         params.runtime.task_index = int(os.environ['FLAGPERF_NODE_RANK'])
 
     return params
