@@ -88,7 +88,7 @@ class TimeHistory(tf.keras.callbacks.Callback):
 
     @property
     def num_trained_samples(self):
-        """The current 1-indexed global step."""
+        """number of trained samples"""
         return self.global_steps * self.batch_size
     
     @property
